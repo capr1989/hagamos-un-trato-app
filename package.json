@@ -1,0 +1,39 @@
+{
+  "name": "hagamos-un-trato-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "check:repository": "node scripts/check-repository.mjs",
+    "test": "npm run test:db",
+    "test:db": "node tests/database/run.mjs",
+    "test:db:supabase-local": "node tests/database/run.mjs --supabase-local",
+    "validate": "npm run check:repository && npm run typecheck && npm run test:db",
+    "db:local:start": "supabase start",
+    "db:local:reset": "supabase db reset",
+    "db:local:stop": "supabase stop"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.119.0",
+    "next": "16.4.6",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "server-only": "0.0.1"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.16",
+    "@types/node": "26.6.6",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "pg": "8.23.1",
+    "supabase": "3.2.0",
+    "typescript": "7.0.2"
+  },
+  "engines": {
+    "node": ">=24.19.0 <25"
+  }
+}

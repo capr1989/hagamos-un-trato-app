@@ -1,0 +1,11 @@
+{
+  "name": "hagamos-un-trato-dev",
+  "project_id": "lewlduoqmsdnmxfichus",
+  "organization_name": "Carlos Pretto",
+  "region": "us-east-1",
+  "postgres_major_version": 17,
+  "dashboard_url": "https://supabase.com/dashboard/project/lewlduoqmsdnmxfichus",
+  "identity_source": "User confirmation; MCP get_project currently returns Unknown tool",
+  "remote_operations": "Supabase MCP only; identity and existing migrations must be verified before applying",
+  "public_launch_enabled": false
+}

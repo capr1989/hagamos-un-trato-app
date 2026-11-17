@@ -1,0 +1,1 @@
+-- Intentionally empty: no fabricated companies or unreviewed geography. Taxonomy is versioned in migrations.

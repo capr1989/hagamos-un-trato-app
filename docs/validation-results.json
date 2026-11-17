@@ -1,0 +1,62 @@
+{
+  "date": "2026-11-17",
+  "original_tests": 44,
+  "original_passed": 44,
+  "additional_regressions": 4,
+  "total_tests": 48,
+  "passed": 48,
+  "failed": 0,
+  "engine": "PostgreSQL 18.6 (PGlite 0.5.16), wasm32",
+  "target_postgres_major": 17,
+  "postgres_17_integration": "Prepared in GitHub Actions; not yet executed at this snapshot",
+  "migrations_rebuilt_from_empty": 8,
+  "application_tables": 18,
+  "repository_check": "passed",
+  "typescript": "passed",
+  "next_build": "passed",
+  "fixture_policy": "Synthetic TEST ONLY fixtures, .invalid domains, transaction rollback; no remote fixtures inserted",
+  "docker_local": "Unavailable: dockerDesktopLinuxEngine named pipe not found",
+  "supabase_project_id": "lewlduoqmsdnmxfichus",
+  "remote_verification": "blocked",
+  "remote_error": "codex_apps/supabase.get_project: -32001 Unknown tool({\"name\":\"supabase.get_project\"})",
+  "supabase_connections_tested": [
+    "Supabase",
+    "Primary"
+  ],
+  "remote_migrations_applied_by_this_agent": 0,
+  "deployed": false,
+  "migration_sha256": [
+    {
+      "file": "20261117171305_foundation.sql",
+      "sha256": "5f3c64c649d91bd39d6f07f44175c14a5d174ce920fb11380d53a0cc14612ecc"
+    },
+    {
+      "file": "20261117171306_geography_and_markets.sql",
+      "sha256": "4de959197450784e33328470232dfbccc80b5620269cd542991211c4e0b14f34"
+    },
+    {
+      "file": "20261117171307_categories_and_services.sql",
+      "sha256": "752a86c90cd048fd76e8378a2f9e0e04da1e7870beb7183066394c422e3bc6fb"
+    },
+    {
+      "file": "20261117171309_companies_offerings_and_presence.sql",
+      "sha256": "cbb1f25564b0eb45ebd1fed7a856729b5912843936af210a7c62f5372f6a9641"
+    },
+    {
+      "file": "20261117171310_contacts_pages_and_aliases.sql",
+      "sha256": "902bd6181ab46b864fe6ca56093e12413805f3640189767d0ab8e8b516550583"
+    },
+    {
+      "file": "20261117171311_evidence_and_editorial_administration.sql",
+      "sha256": "fed25f7de463f06f0de6398f9323fb64c65f6d3faaf4b34db1123c27d9c74874"
+    },
+    {
+      "file": "20261117171312_integrity_security_and_publication.sql",
+      "sha256": "24d702c0bca843611b59b55b37df6566ca57d7e330cf4dd5f351989073b9a414"
+    },
+    {
+      "file": "20261117171313_initial_taxonomy.sql",
+      "sha256": "d63ae732ad30fb83b5ba0f5669e73287c94955f741241e36100597d5a414cc35"
+    }
+  ]
+}
