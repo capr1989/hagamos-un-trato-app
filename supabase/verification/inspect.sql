@@ -1,4 +1,5 @@
--- Read-only checks. Execute via Supabase MCP ONLY after get_project confirms lewlduoqmsdnmxfichus.
+-- Read-only checks via DIRECT Supabase MCP only. First verify get_project_url returns https://lewlduoqmsdnmxfichus.supabase.co.
+-- No get_project/account administration, hosted CLI or dashboard fallback.
 select current_database() as database_name, version() as postgres_version;
 select n.nspname as schema_name,c.relname as table_name,c.relrowsecurity as rls_enabled
 from pg_catalog.pg_class c join pg_catalog.pg_namespace n on n.oid=c.relnamespace

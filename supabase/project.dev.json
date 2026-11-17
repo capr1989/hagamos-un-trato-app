@@ -5,7 +5,7 @@
   "region": "us-east-1",
   "postgres_major_version": 17,
   "dashboard_url": "https://supabase.com/dashboard/project/lewlduoqmsdnmxfichus",
-  "identity_source": "User confirmation; MCP get_project currently returns Unknown tool",
-  "remote_operations": "Supabase MCP only; identity and existing migrations must be verified before applying",
+  "identity_source": "Verified 2026-11-17 by direct MCP get_project_url and SQL PostgreSQL 17.12; organization/name/region supplied by user",
+  "remote_operations": "Supabase direct MCP only; eight original migrations applied and verified; see remote-migrations.json",
   "public_launch_enabled": false
 }

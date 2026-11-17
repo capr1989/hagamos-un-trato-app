@@ -53,3 +53,7 @@ No se ejecutaron `create_project`, `apply_migration` ni operaciones alternativas
 ## Límites pendientes de aplicación
 
 La base y los permisos soportan los procesos editoriales. Las interfaces y rutas de administración, el endpoint limitado de reportes, la invalidación de cachés al editar y los procesos de retención se implementarán en la etapa de aplicación. Ninguno aparece como operativo en la página inicial. La geografía documental y la activación pública siguen pendientes de revisión.
+
+## Actualización alojada — 17 de noviembre de 2026
+
+El bloqueo histórico descrito arriba quedó resuelto usando el MCP directo supabase. Las ocho migraciones originales ya se aplicaron y se verificaron en lewlduoqmsdnmxfichus. El informe anterior se conserva como evidencia histórica de pruebas y huellas; el estado actual, permisos, asesores y límites están en [hosted-validation-2026-11-17.md](hosted-validation-2026-11-17.md).

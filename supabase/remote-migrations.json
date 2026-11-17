@@ -1,0 +1,129 @@
+{
+  "project_id": "lewlduoqmsdnmxfichus",
+  "verified_date": "2026-11-17",
+  "source_commit": "b266c1c487421ad9d2f9b84c2667fd01fd4c6b6b",
+  "mechanism": "direct MCP supabase.apply_migration",
+  "note": "MCP generated remote versions. Local files are unchanged. Reconcile version mapping before any future CLI migration operation; do not reapply by local timestamps.",
+  "migrations": [
+    {
+      "file": "supabase/migrations/20261117171305_foundation.sql",
+      "local_version": "20261117171305",
+      "name": "foundation",
+      "sha256": "5f3c64c649d91bd39d6f07f44175c14a5d174ce920fb11380d53a0cc14612ecc",
+      "remote_version": "20261117185358",
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"success\":true}"
+          }
+        ]
+      }
+    },
+    {
+      "file": "supabase/migrations/20261117171306_geography_and_markets.sql",
+      "local_version": "20261117171306",
+      "name": "geography_and_markets",
+      "sha256": "4de959197450784e33328470232dfbccc80b5620269cd542991211c4e0b14f34",
+      "remote_version": "20261117185407",
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"success\":true}"
+          }
+        ]
+      }
+    },
+    {
+      "file": "supabase/migrations/20261117171307_categories_and_services.sql",
+      "local_version": "20261117171307",
+      "name": "categories_and_services",
+      "sha256": "752a86c90cd048fd76e8378a2f9e0e04da1e7870beb7183066394c422e3bc6fb",
+      "remote_version": "20261117185410",
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"success\":true}"
+          }
+        ]
+      }
+    },
+    {
+      "file": "supabase/migrations/20261117171309_companies_offerings_and_presence.sql",
+      "local_version": "20261117171309",
+      "name": "companies_offerings_and_presence",
+      "sha256": "cbb1f25564b0eb45ebd1fed7a856729b5912843936af210a7c62f5372f6a9641",
+      "remote_version": "20261117185412",
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"success\":true}"
+          }
+        ]
+      }
+    },
+    {
+      "file": "supabase/migrations/20261117171310_contacts_pages_and_aliases.sql",
+      "local_version": "20261117171310",
+      "name": "contacts_pages_and_aliases",
+      "sha256": "902bd6181ab46b864fe6ca56093e12413805f3640189767d0ab8e8b516550583",
+      "remote_version": "20261117185415",
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"success\":true}"
+          }
+        ]
+      }
+    },
+    {
+      "file": "supabase/migrations/20261117171311_evidence_and_editorial_administration.sql",
+      "local_version": "20261117171311",
+      "name": "evidence_and_editorial_administration",
+      "sha256": "fed25f7de463f06f0de6398f9323fb64c65f6d3faaf4b34db1123c27d9c74874",
+      "remote_version": "20261117185418",
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"success\":true}"
+          }
+        ]
+      }
+    },
+    {
+      "file": "supabase/migrations/20261117171312_integrity_security_and_publication.sql",
+      "local_version": "20261117171312",
+      "name": "integrity_security_and_publication",
+      "sha256": "24d702c0bca843611b59b55b37df6566ca57d7e330cf4dd5f351989073b9a414",
+      "remote_version": "20261117185426",
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"success\":true}"
+          }
+        ]
+      }
+    },
+    {
+      "file": "supabase/migrations/20261117171313_initial_taxonomy.sql",
+      "local_version": "20261117171313",
+      "name": "initial_taxonomy",
+      "sha256": "d63ae732ad30fb83b5ba0f5669e73287c94955f741241e36100597d5a414cc35",
+      "remote_version": "20261117185438",
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"success\":true}"
+          }
+        ]
+      }
+    }
+  ]
+}
