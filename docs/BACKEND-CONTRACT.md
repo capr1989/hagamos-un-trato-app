@@ -4,11 +4,11 @@ Verificado el 17 de noviembre de 2026 en `lewlduoqmsdnmxfichus` (`hagamos-un-tra
 
 ## Estado de integración
 
-**Implementado y comprobado en PostgreSQL alojado:** ocho migraciones, 18 tablas con RLS, 64 políticas, una vista pública y una RPC pública. Datos iniciales: Panamá inactivo, dos categorías activas, diez servicios activos. No existen empresas, ubicaciones, mercados ni usuarios Auth. Por eso los listados de empresas devuelven `[]`.
+**Implementado y comprobado en PostgreSQL alojado:** diez migraciones (ocho basales y dos de QA), 18 tablas con RLS, 64 políticas, una vista pública, la RPC pública search_directory y diez funciones QA restringidas a personal u operador. Datos iniciales: Panamá inactivo, dos categorías activas, diez servicios activos. No existen empresas, ubicaciones, mercados ni usuarios Auth. Por eso los listados de empresas devuelven `[]`.
 
 **Pendiente antes de habilitar la aplicación:** comprobar la configuración alojada de esquemas expuestos de Data API y Auth (registro público y acceso anónimo de Auth deshabilitados), crear por operación controlada al personal real y conceder sus roles, documentar la delimitación de Ciudad de Panamá, cargar geografía revisada y mercado en borrador. La configuración local solo expone `public`; no demuestra la configuración alojada. Las herramientas MCP disponibles no exponen los ajustes hospedados de Auth/Data API. No se afirma una prueba HTTP con clave publishable ni inicio de sesión real de personal.
 
-Este contrato documenta objetos SQL existentes. No hay endpoints propios de Next.js implementados, recepción pública de reportes ni RPC de publicación/fusión. No hay clientes, cuentas empresariales, reclamaciones, leads, pagos ni Storage.
+Este contrato documenta objetos SQL existentes. Hay un panel interno temporal en /internal/qa y una ruta de servidor protegida /internal/qa/api; ver [QA-PANEL.md](QA-PANEL.md). La publicación revisada dispone de qa_publication_check y qa_publish_company para personal activo. No hay recepción pública de reportes ni RPC de fusión con traslado automático de hechos. No hay clientes, cuentas empresariales, reclamaciones, leads, pagos ni Storage.
 
 ## Acceso y autenticación
 
@@ -347,9 +347,9 @@ Hay FK compuestas para coherencia de país/padre, categoría/servicio y empresa/
 
 Las seis tablas privadas son `data_sources`, `company_sources`, `company_editorial`, `company_reports`, `staff_roles` y `audit_log`. Su diccionario detallado está en v0.3; su DDL concreto en las migraciones. No son entidades consumibles por el frontend público. Las 25 funciones auxiliares privadas implementan políticas, integridad y auditoría; no son una API editorial.
 
-No existe RPC pública para insertar reportes. El futuro endpoint de servidor debe validar empresa publicable, tipo, mensaje de 1–4000 caracteres, correo opcional, aviso de privacidad y límites de frecuencia/abuso; no dar INSERT al navegador ni crear cuentas o leads. No está implementado ni se anuncia como operativo. Retención/purga y responsable de bandeja siguen pendientes.
+No existe RPC anónima para insertar reportes. El panel guarda reportes internos mediante qa_save con sesión y RLS; El futuro endpoint de servidor debe validar empresa publicable, tipo, mensaje de 1–4000 caracteres, correo opcional, aviso de privacidad y límites de frecuencia/abuso; no dar INSERT al navegador ni crear cuentas o leads. No está implementado ni se anuncia como operativo. Retención/purga y responsable de bandeja siguen pendientes.
 
-Publicación, fusión y traslado de evidencia requieren operaciones administrativas transaccionales explícitas que aún deben integrarse. Existen restricciones de coherencia y alias y auditoría; no hay un RPC de fusión que mueva automáticamente los hechos. La aplicación debe invalidar cachés y sitemap al cambiar elegibilidad; esta entrega no crea ese mecanismo.
+La publicación revisada y su comprobación están integradas en QA mediante qa_publish_company y qa_publication_check. La fusión y el traslado de evidencia requieren operaciones administrativas transaccionales explícitas aún no automatizadas. Existen restricciones de coherencia y alias y auditoría; no hay un RPC de fusión que mueva automáticamente los hechos. La aplicación debe invalidar cachés y sitemap al cambiar elegibilidad; esta entrega no crea ese mecanismo.
 
 ## Errores y ausencia de resultados
 
@@ -373,3 +373,9 @@ No asumir un código HTTP de un endpoint propio inexistente. La aplicación debe
 Antes de la integración operativa: cerrar configuración hospedada de Auth/Data API, bootstrap de personal real, delimitación geográfica y mercado en borrador, flujos editoriales/reportes, invalidación de caché, retención y criterio de indexación. No activar mercado ni cargar empresas hasta cumplir las reglas de evidencia.
 
 Ver [validación alojada](hosted-validation-2026-11-17.md) y [relación de versiones remotas](../supabase/remote-migrations.json). Las versiones del historial remoto fueron generadas por MCP y difieren de los prefijos locales. No usar `supabase db push` ni reejecutar las ocho migraciones por fecha local: reconciliar primero las versiones mediante un procedimiento revisado.
+
+## Extensión temporal de QA
+
+companies.qa_test_batch UUID nullable identifica fixtures de desarrollo, es inmutable y prohíbe publicar la empresa marcada. Los nombres QA TEST exigen marcador. No cambia las reglas del directorio real. La limpieza del panel es archivado de una sola empresa marcada, sin DELETE ni pérdida de auditoría.
+
+RPC en public, todas SECURITY INVOKER: qa_staff_context, qa_records, qa_save, qa_publication_check, qa_publish_company, qa_duplicate_candidates, qa_archive_test_company y qa_set_market_status para authenticated, con rol HUT comprobado y RLS. qa_bootstrap_status y qa_bootstrap_admin son solo de operador/service_role, de un solo uso mientras no exista personal. No reciben SQL arbitrario ni permiten autoasignación de roles. El esquema private sigue fuera de la API pública. Los cambios editoriales registran estados anterior/nuevo y revisión de duplicados en auditoría sin copiar motivos libres.

@@ -73,6 +73,7 @@ export type Database = {
           name_normalized: string | null
           publication_status: string
           published_at: string | null
+          qa_test_batch: string | null
           slug: string
           trade_name: string
           updated_at: string
@@ -88,6 +89,7 @@ export type Database = {
           name_normalized?: string | null
           publication_status?: string
           published_at?: string | null
+          qa_test_batch?: string | null
           slug: string
           trade_name: string
           updated_at?: string
@@ -103,6 +105,7 @@ export type Database = {
           name_normalized?: string | null
           publication_status?: string
           published_at?: string | null
+          qa_test_batch?: string | null
           slug?: string
           trade_name?: string
           updated_at?: string
@@ -718,6 +721,34 @@ export type Database = {
       }
     }
     Functions: {
+      qa_archive_test_company: { Args: { p_company_id: string }; Returns: Json }
+      qa_bootstrap_admin: { Args: { p_user_id: string }; Returns: Json }
+      qa_bootstrap_status: { Args: never; Returns: boolean }
+      qa_duplicate_candidates: { Args: { p_company_id: string }; Returns: Json }
+      qa_publication_check: { Args: { p_company_id: string }; Returns: Json }
+      qa_publish_company: { Args: { p_company_id: string }; Returns: Json }
+      qa_records: {
+        Args: {
+          p_company_id?: string
+          p_entity: string
+          p_limit?: number
+          p_offset?: number
+        }
+        Returns: Json
+      }
+      qa_save: {
+        Args: { p_data: Json; p_entity: string; p_id?: string }
+        Returns: Json
+      }
+      qa_set_market_status: {
+        Args: {
+          p_documentation_confirmed?: boolean
+          p_market_id: string
+          p_status: string
+        }
+        Returns: Json
+      }
+      qa_staff_context: { Args: never; Returns: Json }
       search_directory: {
         Args: {
           p_category_id?: string

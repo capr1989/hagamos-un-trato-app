@@ -1,0 +1,15 @@
+import { createClient } from '@supabase/supabase-js';
+import { qaConfig } from '../src/lib/qa/policy.ts';
+const config=qaConfig(process.env);
+const client=createClient(config.url,config.key,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+const results=[];
+const taxonomy=await client.from('categories').select('id,code,services(id,code,category_id)');
+results.push({name:'Anonymous taxonomy API',status:!taxonomy.error&&taxonomy.data?.length===2&&taxonomy.data.reduce((n,row)=>n+row.services.length,0)===10?'PASS':'FAIL',code:taxonomy.error?.code||null});
+const search=await client.rpc('search_directory',{p_market_code:'qa_nonexistent_market'});
+results.push({name:'Anonymous RPC empty result',status:!search.error&&Array.isArray(search.data)&&search.data.length===0?'PASS':'FAIL',code:search.error?.code||null});
+const denied=await client.schema('private').from('staff_roles').select('user_id').limit(1);
+results.push({name:'Anonymous private access denied',status:denied.error&&['PGRST106','42501'].includes(denied.error.code)?'PASS':'FAIL',code:denied.error?.code||null});
+console.log(JSON.stringify({context:'fresh anonymous SDK client; no session or privileged key',results}));
+if(results.some(row=>row.status!=='PASS'))process.exitCode=1;
+console.log(JSON.stringify({context:'fresh anonymous SDK client; no session or privileged key',results}));
+if(results.some(row=>row.status!=='PASS'))process.exitCode=1;

@@ -266,7 +266,7 @@ try {
     assert.equal(await count("select count(*) as n from private.audit_log where change_summary::text like '%company-10.invalid%'"), 0);
     await rejected('delete from private.audit_log', [], ['42501']);
   });
-  test('Only one public function is exposed and it is security invoker', async () => {
+  test('All public functions are security invoker and the view respects RLS', async () => {
     assert.equal(await count("select count(*) as n from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.prosecdef"), 0);
     assert.equal(await scalar("select reloptions @> array['security_invoker=true'] from pg_class where oid='public.directory_company_offerings'::regclass"), true);
   });
@@ -288,6 +288,100 @@ try {
     await q("insert into public.companies(id,trade_name,slug) values($1,'TEST ONLY inserted profile','test-only-inserted')", [uid(70)]);
     await role('authenticated', editor);
     await rejected("insert into private.company_editorial(company_id,publication_decision,decided_at) values($1,'withdrawn',now())", [uid(70)], ['42501']);
+  });
+
+  test('QA anonymous cannot call private CRUD bridge', async () => {
+    await role('anon'); await rejected("select public.qa_records('company_sources')", [], ['42501']);
+  });
+  test('QA authenticated non-staff cannot use CRUD or metadata role escalation', async () => {
+    await role('authenticated', outsider);
+    assert.equal((await scalar('select public.qa_staff_context()')).role, null);
+    await rejected("select public.qa_records('companies')", [], ['42501']);
+  });
+  test('QA editor can read private evidence through invoker bridge under existing RLS', async () => {
+    await role('authenticated', editor);
+    assert.equal((await scalar('select public.qa_staff_context()')).role, 'editor');
+    assert.ok((await scalar("select public.qa_records('company_sources')")).length > 0);
+  });
+  test('QA editor cannot read roles or grant themselves admin', async () => {
+    await role('authenticated', editor);
+    await rejected("select public.qa_records('staff_roles')", [], ['42501']);
+    await rejected("select public.qa_save('staff_roles',$1::jsonb)", [JSON.stringify({ user_id:editor, role:'admin', status:'active' })], ['42501']);
+  });
+  test('QA admin cannot modify their own role through panel bridge', async () => {
+    await role('authenticated', admin);
+    await rejected("select public.qa_save('staff_roles',$1::jsonb,$2)", [JSON.stringify({ role:'editor' }), admin], ['42501']);
+  });
+  test('QA bridge rejects arbitrary entities, fields and audit writes', async () => {
+    await role('authenticated', admin);
+    await rejected("select public.qa_save('audit_log','{\"action\":\"forged\"}')", [], ['22023']);
+    await rejected("select public.qa_save('companies','{\"created_at\":\"2020-01-01\"}')", [], ['22023']);
+    await rejected("select public.qa_records('companies; drop table companies')", [], ['22023']);
+  });
+  test('QA marked test company is permanently blocked from publication', async () => {
+    await role('authenticated', editor);
+    const r=await scalar("select public.qa_save('companies',$1::jsonb)", [JSON.stringify({trade_name:'QA TEST isolated',slug:'qa-test-isolated',qa_test_batch:uid(7777)})]);
+    assert.equal(r.qa_test_batch,uid(7777));
+    const check=await scalar('select public.qa_publication_check($1)',[r.id]);
+    assert.equal(check.is_test,true);assert.equal(check.can_publish,false);
+    await rejected("update public.companies set qa_test_batch=null where id=$1",[r.id]);
+    await rejected("update public.companies set publication_status='published',published_at=now() where id=$1",[r.id]);
+    await rejected('select public.qa_publish_company($1)',[r.id]);
+  });
+  test('QA cannot create a QA TEST company without its permanent marker', async () => {
+    await role('authenticated', editor);
+    await rejected("select public.qa_save('companies','{\"trade_name\":\"QA TEST unmarked\",\"slug\":\"qa-test-unmarked\"}')");
+  });
+  test('QA can publish an eligible non-test fixture using reviewed predicates', async () => {
+    await role('authenticated', editor);
+    assert.equal((await scalar('select public.qa_publication_check($1)',[a.companyId])).can_publish,true);
+    assert.equal((await scalar('select public.qa_publish_company($1)',[a.companyId])).currently_public,true);
+  });
+  test('QA cleanup rejects real company and editor, archives one test without deleting audit', async () => {
+    await role('authenticated', editor);
+    await rejected('select public.qa_archive_test_company($1)',[a.companyId],['42501']);
+    const r=await scalar("select public.qa_save('companies',$1::jsonb)",[JSON.stringify({trade_name:'QA TEST archive',slug:'qa-test-archive',qa_test_batch:uid(7778)})]);
+    await role('authenticated',admin);
+    await rejected('select public.qa_archive_test_company($1)',[a.companyId]);
+    assert.equal((await scalar('select public.qa_archive_test_company($1)',[r.id])).physical_deletion,false);
+    assert.equal(await scalar('select publication_status from public.companies where id=$1',[r.id]),'archived');
+    assert.ok(await count('select count(*) as n from private.audit_log where entity_id=$1',[r.id]));
+  });
+  test('QA geography requires documentary reference and draft-first market', async () => {
+    await role('authenticated',admin);
+    await rejected("select public.qa_save('locations',$1::jsonb)",[JSON.stringify({country_code:'PA',parent_id:uid(2),kind:'city',name:'TEST ONLY no document',slug:'test-no-document'})]);
+    await rejected("select public.qa_save('directory_markets',$1::jsonb)",[JSON.stringify({code:'future',country_code:'PA',location_id:uid(4),display_name:'TEST ONLY',status:'active'})]);
+    await rejected("select public.qa_set_market_status($1,'active',false)",[market]);
+  });
+  test('QA role suspension affects the next bridge call', async () => {
+    await q("update private.staff_roles set status='suspended' where user_id=$1",[editor]);
+    await role('authenticated',editor);await rejected("select public.qa_records('companies')",[],['42501']);
+  });
+  test('QA bootstrap cannot be called by authenticated staff or reused by operator', async () => {
+    await role('authenticated',admin);await rejected('select public.qa_bootstrap_admin($1)',[outsider],['42501']);
+    await role('postgres');await rejected('select public.qa_bootstrap_admin($1)',[outsider],['42501']);
+  });
+
+  test('QA editorial history preserves controlled state transitions without private reasons', async () => {
+    await role('authenticated',editor);
+    await q("select public.qa_save('company_editorial',$1::jsonb,$2)",[JSON.stringify({publication_decision:'hold',decision_reason:'PRIVATE TEST REASON MUST NOT BE COPIED'}),a.companyId]);
+    const summary=await scalar("select change_summary from private.audit_log where entity_id=$1 and action='editorial_decision' and change_summary->>'decision'='hold' order by occurred_at desc limit 1",[a.companyId]);
+    assert.equal(summary.previous_decision,'approved');assert.equal(summary.decision,'hold');
+    assert.equal(JSON.stringify(summary).includes('PRIVATE TEST REASON'),false);
+  });
+
+  test('QA bootstrap succeeds only once for an operator on an empty staff registry', async () => {
+    await db.exec('delete from private.staff_roles');
+    assert.equal(await scalar('select public.qa_bootstrap_status()'),true);
+    assert.equal((await scalar('select public.qa_bootstrap_admin($1)',[outsider])).bootstrap_consumed,true);
+    assert.equal(await scalar('select public.qa_bootstrap_status()'),false);
+    await rejected('select public.qa_bootstrap_admin($1)',[admin],['42501']);
+  });
+  test('QA duplicate review recognizes the same domain with different URLs', async () => {
+    await q("insert into public.company_contacts(company_id,channel,value) values($1,'website','http://www.shared.invalid/a'),($2,'website','https://shared.invalid/b')",[a.companyId,b.companyId]);
+    await role('authenticated',editor);
+    const candidates=await scalar('select public.qa_duplicate_candidates($1)',[a.companyId]);
+    assert.ok(candidates.some(row=>row.id===b.companyId&&row.signals.includes('dominio')));
   });
 
   let failed = 0;

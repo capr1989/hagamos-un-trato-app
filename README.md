@@ -4,7 +4,7 @@ Infraestructura inicial de Fase 1: directorio público de aire acondicionado y e
 
 ## Estado real
 
-- Ocho migraciones versionadas, generadas con Supabase CLI 3.2.0 y validadas localmente.
+- Diez migraciones versionadas: ocho basales de Fase 1 y dos necesarias para el panel QA temporal; originales conservadas.
 - Dieciocho tablas de aplicación, RLS, integridad, índices, lectura pública condicionada y administración editorial privada.
 - Baseline de 44 pruebas y cuatro regresiones adicionales: 48/48 correctas tanto en PGlite como en Supabase local/PostgreSQL 17.12 dentro de GitHub Actions. Los resultados y el commit validado están en `docs/validation-report.md`.
 - Proyecto objetivo comunicado por el usuario: `hagamos-un-trato-dev`, `lewlduoqmsdnmxfichus`, región `us-east-1`, PostgreSQL 17.
@@ -79,3 +79,7 @@ Copiar `.env.example` a `.env.local` solo para desarrollo y completar la clave *
 - [Seguridad de la Data API](https://supabase.com/docs/guides/api/securing-your-api)
 
 El branding sigue separado en `capr1989/hagamos-un-trato-brand`; no se ha modificado ni copiado su contenido.
+
+## Panel interno temporal de desarrollo
+
+Implementado en /internal/qa como excepción autorizada para QA. En Windows: `npm run qa:dev` (solo 127.0.0.1). Requiere .env.local habilitado y bootstrap del primer administrador real mediante el procedimiento de [docs/QA-PANEL.md](docs/QA-PANEL.md). No hay autorregistro ni despliegue público. Pruebas actuales: 64 de base de datos y 13 de validación/arranque seguro, además de comprobaciones HTTP locales y consultas anónimas.

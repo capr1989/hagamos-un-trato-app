@@ -1,0 +1,72 @@
+{
+  "context": "Evidencia de operador; no es una comprobación en vivo del navegador",
+  "checked_at": "2026-11-17T19:49:42.068Z",
+  "project_id": "lewlduoqmsdnmxfichus",
+  "checks": [
+    {
+      "name": "Proyecto de destino",
+      "status": "PASS",
+      "detail": "URL confirmada por MCP directo: lewlduoqmsdnmxfichus.supabase.co"
+    },
+    {
+      "name": "Migraciones",
+      "status": "PASS",
+      "detail": "10 registradas: ocho originales + dos necesarias para QA"
+    },
+    {
+      "name": "Tablas y políticas",
+      "status": "PASS",
+      "detail": "18 tablas con RLS; 64 políticas originales conservadas"
+    },
+    {
+      "name": "CRUD y separación de roles",
+      "status": "PASS",
+      "detail": "Prueba MCP transaccional admin/editor/anon; fixtures revertidos"
+    },
+    {
+      "name": "Marcador QA inmutable y publicación prohibida",
+      "status": "PASS",
+      "detail": "Constraint y trigger probados en PostgreSQL alojado"
+    },
+    {
+      "name": "Archivado seguro e historial editorial",
+      "status": "PASS",
+      "detail": "Solo empresa marcada; estados en auditoría sin motivos libres"
+    },
+    {
+      "name": "Seguridad y salud",
+      "status": "PASS",
+      "detail": "Asesores Supabase: cero avisos"
+    },
+    {
+      "name": "Estado inicial limpio",
+      "status": "PASS",
+      "detail": "Cero empresas, usuarios Auth y staff persistentes. Bootstrap disponible"
+    },
+    {
+      "name": "Suite local",
+      "status": "PASS",
+      "detail": "64/64 PostgreSQL en memoria, 13/13 validaciones, TypeScript/build"
+    },
+    {
+      "name": "HTTP local",
+      "status": "PASS",
+      "detail": "9/9 login, origen, autenticación obligatoria, límites y cookies"
+    },
+    {
+      "name": "Cliente API anónimo real",
+      "status": "PASS",
+      "detail": "3/3: taxonomía, RPC vacía y private rechazado con PGRST106"
+    },
+    {
+      "name": "Login y formularios con cuentas reales",
+      "status": "NOT TESTED",
+      "detail": "El operador aún debe crear el primer administrador con su identidad y secreto local"
+    },
+    {
+      "name": "Ajustes hospedados de Auth y política Data API",
+      "status": "NOT TESTED",
+      "detail": "Comprobación manual indicada en docs/QA-PANEL.md; no se cambiaron estos ajustes"
+    }
+  ]
+}

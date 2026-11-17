@@ -124,6 +124,28 @@
           }
         ]
       }
+    },
+    {
+      "file": "supabase/migrations/20261117192245_internal_qa_panel.sql",
+      "local_version": "20261117192245",
+      "name": "internal_qa_panel",
+      "sha256": "8b03b7542bbd4bf83232129bd1e1d93e33cc4ae1b4e72d8b7072920231addbcd",
+      "remote_version": "20261117193704",
+      "response": {
+        "success": true
+      },
+      "remote_content_matched": true
+    },
+    {
+      "file": "supabase/migrations/20261117194046_qa_editorial_history.sql",
+      "local_version": "20261117194046",
+      "name": "qa_editorial_history",
+      "sha256": "479984c25d9552aaa4c428698d017ba4f4c12787a6806c80ef6ee1e19022cb9c",
+      "remote_version": "20261117194200",
+      "response": {
+        "success": true
+      },
+      "remote_content_matched": true
     }
   ]
 }

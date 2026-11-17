@@ -5,8 +5,8 @@ import path from 'node:path';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const read=(p)=>readFile(path.join(root,p),'utf8');
 const files=(await readdir(path.join(root,'supabase/migrations'))).filter(f=>f.endsWith('.sql')).sort();
-assert.equal(files.length,8);
-assert.equal(new Set(files.map(f=>f.slice(0,14))).size,8,'Migration versions must be unique');
+assert.equal(files.length,10);
+assert.equal(new Set(files.map(f=>f.slice(0,14))).size,files.length,'Migration versions must be unique');
 const migrations=(await Promise.all(files.map(f=>read('supabase/migrations/'+f)))).join('\n');
 const tables=[...migrations.matchAll(/create table (public|private)\.([a-z_]+)/g)].map(m=>m[1]+'.'+m[2]);
 assert.equal(tables.length,18);
@@ -28,6 +28,8 @@ async function scan(dir='') {
     if(excluded.has(entry.name))continue;
     const rel=path.join(dir,entry.name);
     if(entry.isDirectory()){await scan(rel);continue;}
+    // .env.local is an ignored local runtime file, never a publication candidate.
+    if(entry.name==='.env.local')continue;
     assert.ok(!/^\.env/.test(entry.name)||entry.name==='.env.example','Real environment files must not be published');
     if(!/\.(sql|mjs|json|toml|md|ts|tsx|yml)$/.test(entry.name)&&entry.name!=='.env.example')continue;
     const content=await read(rel);checked++;
