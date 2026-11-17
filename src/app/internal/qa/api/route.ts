@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
 import { checkRequest, publicClient, requireStaff, sessionContext, setSessionCookies, closeAuthSession, operatorClient, jsonBody, rateLimit } from '@/lib/qa/server';
-import { QaError, searchArguments, uuid, boundedInt } from '@/lib/qa/policy';
+import { QaError, searchArguments, uuid, boundedInt, ownPasswordInput } from '@/lib/qa/policy';
 import { entities } from '@/lib/qa/schema';
 import evidence from '../../../../../supabase/qa-verification.json';
 export const runtime = 'nodejs';
@@ -53,6 +53,22 @@ export async function POST(request: Request) {
     }
     const session = await requireStaff();
     rateLimit(`write:${session.identity.user.id}`,120,60000);
+    if (body.action === 'change-password') {
+      rateLimit(`password:${session.identity.user.id}`,5,300000);
+      const password=ownPasswordInput(body);
+      if (!session.identity.user.email) throw new QaError('La cuenta no tiene email.',400);
+      const auth=publicClient();
+      const reauthenticated=await auth.auth.signInWithPassword({email:session.identity.user.email,password:password.current});
+      if (reauthenticated.error || !reauthenticated.data.session || reauthenticated.data.user?.id!==session.identity.user.id) throw new QaError('La contraseña actual no es correcta.',400);
+      const changed=await auth.auth.updateUser({password:password.next,current_password:password.current});
+      if (changed.error) {
+        await auth.auth.signOut({scope:'local'});
+        throw new QaError(`Supabase rechazó el cambio de contraseña (${changed.error.code || 'Auth'}). Revisa la política de contraseñas.`,400);
+      }
+      const current=await auth.auth.getSession();
+      await setSessionCookies(current.data.session || reauthenticated.data.session);
+      return respond({password_changed:true});
+    }
     if (body.action === 'save') {
       const name = String(body.entity);
       const definition = Object.hasOwn(entities,name) ? entities[name] : null;

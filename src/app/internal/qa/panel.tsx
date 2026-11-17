@@ -105,6 +105,23 @@ function SearchSimulator({rows}:{rows:Rows}) {
     <label className="check"><input type="checkbox" checked={filters.confirmed} onChange={e=>setFilters({...filters,confirmed:e.target.checked})}/>Solo cobertura confirmada</label><button disabled={busy}>Consultar RPC</button>
   </form>{error&&<p role="alert" className="error">{error}</p>}{output&&<><p>{String(output.context)} · {returned.length} empresas · offset {filters.offset}</p><DataTable entity="search" rows={returned}/><div className="actions"><button disabled={busy||filters.offset===0} onClick={()=>void search(Math.max(0,filters.offset-filters.limit))}>Anterior</button><button disabled={busy||returned.length<filters.limit} onClick={()=>void search(filters.offset+filters.limit)}>Siguiente</button></div><h3>Contexto de ofertas en la vista</h3><p>{String(output.offering_note)}</p><DataTable entity="projection" rows={Array.isArray(output.offerings)?output.offerings as Row[]:[]}/></>}</section>;
 }
+function OwnPasswordChange() {
+  const [message,setMessage]=useState('');const [busy,setBusy]=useState(false);
+  async function submit(event:FormEvent<HTMLFormElement>){
+    event.preventDefault();const form=event.currentTarget;const data=new FormData(form);setMessage('');
+    if(data.get('new_password')!==data.get('repeat_password')){setMessage('Las contraseñas nuevas no coinciden.');return;}
+    setBusy(true);
+    try{await api({action:'change-password',current_password:data.get('current_password'),new_password:data.get('new_password')});form.reset();setMessage('Contraseña actualizada.');}
+    catch(error){setMessage(error instanceof Error?error.message:'No se pudo cambiar la contraseña.');}
+    finally{setBusy(false);}
+  }
+  return <details><summary>Cambiar mi contraseña</summary><form className="fields" onSubmit={submit}>
+    <label>Contraseña actual<input name="current_password" type="password" autoComplete="current-password" required maxLength={1024}/></label>
+    <label>Nueva contraseña<input name="new_password" type="password" autoComplete="new-password" required minLength={12} maxLength={128}/></label>
+    <label>Repite la nueva contraseña<input name="repeat_password" type="password" autoComplete="new-password" required minLength={12} maxLength={128}/></label>
+    <button disabled={busy}>Actualizar mi contraseña</button>
+  </form>{message&&<p role="status">{message}</p>}</details>;
+}
 function UserCreation({onSaved}:{onSaved:()=>Promise<void>}) {
   const [message,setMessage]=useState('');const [busy,setBusy]=useState(false);
   async function submit(e:FormEvent<HTMLFormElement>){e.preventDefault();const form=e.currentTarget;const fields=new FormData(form);setBusy(true);setMessage('');try{const result=await api({action:'create-user',email:fields.get('email'),password:fields.get('password'),role:fields.get('role')});form.reset();await onSaved();setMessage(`Usuario interno creado: ${JSON.stringify(result.user)}`);}catch(error){setMessage(error instanceof Error?error.message:'Error.');}finally{setBusy(false);}}
@@ -125,7 +142,7 @@ export default function QaPanel({initialIdentity}:{initialIdentity:Identity|null
   const visibleRows=(rows[entity]||[]).filter(row=>!company||!['company_offerings','company_branches','company_contacts','company_sources','company_editorial','company_reports'].includes(entity)||row.company_id===company);
   async function audit(offset:number){setBusy(true);try{const response=await api(undefined,`?action=records&entity=audit_log&offset=${offset}`);setRows(current=>({...current,audit_log:response.rows as unknown as Row[]}));setAuditOffset(offset);}catch(e){setMessage(e instanceof Error?e.message:'Error.');}finally{setBusy(false);}}
   function navigate(name:string){setGroup(name);setEntity(groups[name][0]||'companies');setEdit(null);setOutput(null);setMessage('');}
-  return <main className="qa"><header><h1>HUT · QA interno</h1><p>Desarrollo · lewlduoqmsdnmxfichus · perfiles no reclamados · sin despliegue público</p>{identity&&<div className="actions"><span>{identity.user.email||identity.user.id} · {identity.role||'sin rol HUT activo'}</span><button onClick={()=>void api({action:'logout'}).then(()=>{setIdentity(null);setRows({});setOutput(null);})}>Cerrar sesión</button></div>}</header>
+  return <main className="qa"><header><h1>HUT · QA interno</h1><p>Desarrollo · lewlduoqmsdnmxfichus · perfiles no reclamados · sin despliegue público</p>{identity&&<div className="actions"><span>{identity.user.email||identity.user.id} · {identity.role||'sin rol HUT activo'}</span><button onClick={()=>void api({action:'logout'}).then(()=>{setIdentity(null);setRows({});setOutput(null);})}>Cerrar sesión</button></div>}{identity?.role&&<OwnPasswordChange/>}</header>
     {message&&<p role="alert" className="error">{message}</p>}
     {!identity?<section><h2>Iniciar sesión</h2><form onSubmit={login} className="login"><label>Email<input name="email" type="email" autoComplete="username" required/></label><label>Contraseña<input name="password" type="password" autoComplete="current-password" required/></label><button disabled={busy}>Entrar</button></form><p>El primer administrador se prepara con <code>npm run qa:bootstrap -- --email correo-real</code>. Revisa docs/QA-PANEL.md. No existe autorregistro.</p></section>:
     !identity.role?<section><h2>Acceso administrativo denegado</h2><p>Auth identificó tu cuenta, pero no hay rol HUT activo. Un administrador debe habilitar tu UUID: <code>{identity.user.id}</code>. Los metadatos del usuario no conceden permisos.</p></section>:

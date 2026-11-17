@@ -44,6 +44,8 @@ Una vez que exista cualquier fila de personal, no se permite reutilizar bootstra
 
 Entrar al panel con ese email y contraseña. Después puede retirarse `SUPABASE_SECRET_KEY` de `.env.local` y reiniciarse Next si solo se habilitarán cuentas Auth existentes. Para crear cuentas adicionales desde Usuarios, conservarla exclusivamente en el servidor local. Los roles se asignan siempre con la sesión del administrador y las políticas existentes. Nadie puede modificarse su propio rol desde el puente QA.
 
+El primer administrador también puede provisionarse mediante una operación de operador explícitamente autorizada por MCP. Una vez creado, no hay que repetir bootstrap. En la cabecera del panel, **Cambiar mi contraseña** permite sustituir la temporal usando la contraseña actual y reautenticación de la propia cuenta, sin clave privilegiada.
+
 ## Secciones conectadas
 
 - **Usuarios y permisos:** login/logout, cuenta y rol actual, creación Auth interna por admin, habilitación por UUID, `admin`/`editor`, suspensión/reactivación. El usuario Auth sin rol queda denegado; el editor no administra roles.

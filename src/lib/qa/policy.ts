@@ -45,6 +45,12 @@ export function boundedInt(value: unknown, min: number, max: number, fallback: n
   if (!Number.isInteger(number) || number < min || number > max) throw new QaError(`Número fuera de ${min}–${max}.`);
   return number;
 }
+export function ownPasswordInput(body: Record<string,unknown>) {
+  if (typeof body.current_password !== 'string' || !body.current_password || body.current_password.length>1024 ||
+      typeof body.new_password !== 'string' || body.new_password.length<12 || body.new_password.length>128 ||
+      body.current_password===body.new_password) throw new QaError('Indica la contraseña actual y una nueva diferente de 12–128 caracteres.');
+  return { current:body.current_password, next:body.new_password };
+}
 export function searchArguments(body: Record<string, unknown>) {
   if (typeof body.market !== 'string' || !/^[a-z0-9_]{1,100}$/.test(body.market)) throw new QaError('Selecciona o indica un código de mercado.');
   if (body.query !== undefined && (typeof body.query !== 'string' || body.query.length > 200)) throw new QaError('Búsqueda: máximo 200 caracteres.');
