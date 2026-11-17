@@ -11,10 +11,13 @@
 | TypeScript (`tsc --noEmit`) | Correcto |
 | Compilación local (`next build`, Next.js 16.4.6) | Correcto; sin despliegue |
 | Supabase local completo en esta computadora | No ejecutado: Docker instalado, motor detenido/no disponible |
+| Supabase local en GitHub Actions, PostgreSQL 17.12 | 48/48 correctas; las ocho migraciones se aplicaron durante el arranque y el reset local |
 | Proyecto Supabase remoto | No verificado por Codex: MCP devuelve `Unknown tool` |
 | Migraciones aplicadas al proyecto remoto por este agente | Ninguna |
 
-El motor de la ejecución observada fue **PostgreSQL 18.6, PGlite 0.5.16**, no PostgreSQL 17 ni un proyecto Supabase alojado. La configuración y el destino comunicados son PostgreSQL 17. La comprobación contra Supabase local/PostgreSQL 17 queda preparada como un job separado de GitHub Actions; su resultado no se presupone en este reporte. Las pruebas locales son complementarias, no sustituyen las consultas reales pendientes contra el proyecto HUT.
+En esta computadora la ejecución usó **PostgreSQL 18.6, PGlite 0.5.16**. Posteriormente, [GitHub Actions ejecutó ambos jobs correctamente](https://github.com/capr1989/hagamos-un-trato-app/actions/runs/44141888198) sobre el commit `06b6354db5a55b4bdbca36b0f5ef3b4b7fb27672`: `source-and-postgres` validó alcance, TypeScript, 48 pruebas PGlite y build; `supabase-local` inició un stack aislado con la imagen `public.ecr.aws/supabase/postgres:17.12.0.000`, reconstruyó la base con las ocho migraciones y pasó 48/48 pruebas. Los fixtures se revirtieron y el stack se detuvo. Los jobs observados fueron `134246578612` y `134246579474`.
+
+Ese PostgreSQL 17 se ejecutó como contenedor local del runner de GitHub; **no es el proyecto alojado HUT**. Ninguna de estas pruebas sustituye la identificación y verificación remotas pendientes por Supabase MCP.
 
 ## Correcciones de implementación
 

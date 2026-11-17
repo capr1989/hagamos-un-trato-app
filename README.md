@@ -6,7 +6,7 @@ Infraestructura inicial de Fase 1: directorio público de aire acondicionado y e
 
 - Ocho migraciones versionadas, generadas con Supabase CLI 3.2.0 y validadas localmente.
 - Dieciocho tablas de aplicación, RLS, integridad, índices, lectura pública condicionada y administración editorial privada.
-- Baseline de 44 pruebas y cuatro regresiones adicionales; los resultados de ejecución se registran en `docs/validation-report.md`.
+- Baseline de 44 pruebas y cuatro regresiones adicionales: 48/48 correctas tanto en PGlite como en Supabase local/PostgreSQL 17.12 dentro de GitHub Actions. Los resultados y el commit validado están en `docs/validation-report.md`.
 - Proyecto objetivo comunicado por el usuario: `hagamos-un-trato-dev`, `lewlduoqmsdnmxfichus`, región `us-east-1`, PostgreSQL 17.
 - El conector Supabase MCP devuelve `Unknown tool` al consultar ese proyecto. No se afirma que las migraciones estén aplicadas ni que exista una vinculación operativa.
 - No se incluyen empresas, límites geográficos inventados ni mercados activos. La taxonomía aprobada contiene dos categorías y diez servicios; Panamá se incorpora inactivo.

@@ -8,7 +8,7 @@
   "failed": 0,
   "engine": "PostgreSQL 18.6 (PGlite 0.5.16), wasm32",
   "target_postgres_major": 17,
-  "postgres_17_integration": "Prepared in GitHub Actions; not yet executed at this snapshot",
+  "postgres_17_integration": "Passed: GitHub Actions run 44141888198; isolated Supabase local, 48/48 tests",
   "migrations_rebuilt_from_empty": 8,
   "application_tables": 18,
   "repository_check": "passed",
@@ -58,5 +58,27 @@
       "file": "20261117171313_initial_taxonomy.sql",
       "sha256": "d63ae732ad30fb83b5ba0f5669e73287c94955f741241e36100597d5a414cc35"
     }
-  ]
+  ],
+  "github_actions": {
+    "run_id": 44141888198,
+    "url": "https://github.com/capr1989/hagamos-un-trato-app/actions/runs/44141888198",
+    "tested_commit": "06b6354db5a55b4bdbca36b0f5ef3b4b7fb27672",
+    "conclusion": "success",
+    "jobs": [
+      {
+        "name": "source-and-postgres",
+        "job_id": 134246578612,
+        "conclusion": "success",
+        "tests": 48
+      },
+      {
+        "name": "supabase-local",
+        "job_id": 134246579474,
+        "conclusion": "success",
+        "tests": 48,
+        "postgres_image": "public.ecr.aws/supabase/postgres:17.12.0.000"
+      }
+    ],
+    "hosted_supabase_project_accessed": false
+  }
 }
