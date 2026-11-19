@@ -5,11 +5,11 @@ import path from 'node:path';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const read=(p)=>readFile(path.join(root,p),'utf8');
 const files=(await readdir(path.join(root,'supabase/migrations'))).filter(f=>f.endsWith('.sql')).sort();
-assert.equal(files.length,10);
+assert.equal(files.length,11);
 assert.equal(new Set(files.map(f=>f.slice(0,14))).size,files.length,'Migration versions must be unique');
 const migrations=(await Promise.all(files.map(f=>read('supabase/migrations/'+f)))).join('\n');
 const tables=[...migrations.matchAll(/create table (public|private)\.([a-z_]+)/g)].map(m=>m[1]+'.'+m[2]);
-assert.equal(tables.length,18);
+assert.equal(tables.length,19); // 18 business tables + private, ephemeral abuse counters.
 for(const table of tables) assert.ok(migrations.includes('alter table '+table+' enable row level security;'),table+' needs RLS');
 for(const future of ['customers','service_requests','lead_assignments','matching_runs','subscriptions','payments','company_members','company_claims']) assert.ok(!tables.some(t=>t.endsWith('.'+future)),future+' is out of phase 1');
 const cfg=await read('supabase/config.toml');

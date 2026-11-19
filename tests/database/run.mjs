@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { registerReportTests } from './company-reports.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const mode = process.argv.includes('--supabase-local') ? 'supabase-local' : 'pglite';
@@ -31,7 +32,7 @@ const q = async (sql, params = []) => (await db.query(sql, params)).rows;
 const count = async (sql, params = []) => Number((await q(sql, params))[0].n);
 const scalar = async (sql, params = []) => Object.values((await q(sql, params))[0])[0];
 const role = async (name, user = '') => {
-  if (!['anon', 'authenticated', 'postgres'].includes(name)) throw new Error('Unknown fixture role');
+  if (!['anon', 'authenticated', 'postgres','service_role'].includes(name)) throw new Error('Unknown fixture role');
   await db.exec('reset role');
   await q("select set_config('request.jwt.claim.sub',$1,true), set_config('request.jwt.claims',$2,true)", [user, JSON.stringify({ sub: user || undefined, role: name })]);
   await db.exec(`set local role ${name}`);
@@ -109,8 +110,8 @@ try {
   // Flush deferred constraints before each test's savepoint.
   await db.exec('set constraints all immediate');
 
-  test('All 18 application tables have RLS enabled', async () => {
-    assert.equal(await count("select count(*) as n from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname in ('public','private') and c.relkind='r' and c.relrowsecurity"), 18);
+  test('All 18 application tables and abuse counter infrastructure have RLS enabled', async () => {
+    assert.equal(await count("select count(*) as n from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname in ('public','private') and c.relkind='r' and c.relrowsecurity"), 19);
   });
   test('Service must belong to the offering category', () => rejected('insert into public.company_offerings(company_id,category_id,service_id) values($1,$2,$3)', [a.companyId, category, solarService]));
   test('Category-only offers cannot be duplicated through NULL service', async () => {
@@ -384,6 +385,7 @@ try {
     assert.ok(candidates.some(row=>row.id===b.companyId&&row.signals.includes('dominio')));
   });
 
+  registerReportTests({test,q,scalar,count,role,rejected,uid,a,b,draft,held,admin,editor,outsider});
   let failed = 0;
   for (const { name, run } of tests) {
     await db.exec('savepoint test_case');

@@ -26,6 +26,7 @@ jobs:
       - run: npm ci
       - run: npm run validate
       - run: npm run build
+      - run: npm run reports:smoke-http
   supabase-local:
     runs-on: ubuntu-24.04
     timeout-minutes: 25

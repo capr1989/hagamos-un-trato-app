@@ -1,0 +1,52 @@
+{
+  "project_id": "lewlduoqmsdnmxfichus",
+  "date": "2026-11-19",
+  "base_commit": "5ebc74928d719617ef5a082fa73af5803676269b",
+  "migration": {
+    "file": "supabase/migrations/20261119210627_company_report_ingress.sql",
+    "sha256": "da4520697de7d8b927e5e7ca689003a62ab313e6e1f87298ade5c5d4a8d543e0",
+    "hosted_status": "NOT APPLIED",
+    "remote_version": null
+  },
+  "local": {
+    "repository": "PASS",
+    "typecheck": "PASS",
+    "qa": {
+      "passed": 14,
+      "failed": 0
+    },
+    "report_http_unit": {
+      "passed": 13,
+      "failed": 0,
+      "turnstile": "stubbed provider; validator tested separately"
+    },
+    "pglite": {
+      "passed": 79,
+      "failed": 0,
+      "fixtures": "local transaction rolled back"
+    },
+    "build": "PASS",
+    "next_http_disabled_smoke": "PASS 503; local child server; no hosted calls"
+  },
+  "postgres17": {
+    "local": "NOT RUN: Docker engine unavailable",
+    "ci": "pending GitHub Actions"
+  },
+  "hosted": {
+    "direct_mcp": "UNAVAILABLE: no mcp__supabase__ tools exposed after reauthentication",
+    "schema": "NOT VERIFIED this delivery",
+    "rls": "NOT VERIFIED hosted; 19 RLS tables and 64 retained policies tested in PGlite",
+    "writes": 0,
+    "real_captcha_http": "NOT TESTED",
+    "generated_types": "previous hosted snapshot; regenerate after apply"
+  },
+  "external_pending": [
+    "Turnstile production site/secret/action/hostname",
+    "approved privacy notice and retention policy/owner",
+    "server-only key and origin HMAC secret",
+    "trusted hosting/WAF/proxy and log configuration",
+    "scheduled abuse metadata maintenance and backlog monitoring"
+  ],
+  "public_deployment": false,
+  "public_endpoint_enabled_by_default": false
+}

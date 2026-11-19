@@ -4,11 +4,11 @@ Verificado el 17 de noviembre de 2026 en `lewlduoqmsdnmxfichus` (`hagamos-un-tra
 
 ## Estado de integración
 
-**Implementado y comprobado en PostgreSQL alojado:** diez migraciones (ocho basales y dos de QA), 18 tablas con RLS, 64 políticas, una vista pública, la RPC pública search_directory y diez funciones QA restringidas a personal u operador. Datos iniciales: Panamá inactivo, dos categorías activas, diez servicios activos. No existen empresas, ubicaciones, mercados ni usuarios Auth. Por eso los listados de empresas devuelven `[]`.
+**Instantánea alojada histórica del 17/11, anterior al aprovisionamiento del administrador:** diez migraciones (ocho basales y dos de QA), 18 tablas con RLS, 64 políticas, una vista pública, la RPC pública search_directory y diez funciones QA restringidas a personal u operador. Datos iniciales: Panamá inactivo, dos categorías activas, diez servicios activos. No existen empresas, ubicaciones, mercados ni usuarios Auth. Por eso los listados de empresas devuelven `[]`.
 
 **Pendiente antes de habilitar la aplicación:** comprobar la configuración alojada de esquemas expuestos de Data API y Auth (registro público y acceso anónimo de Auth deshabilitados), crear por operación controlada al personal real y conceder sus roles, documentar la delimitación de Ciudad de Panamá, cargar geografía revisada y mercado en borrador. La configuración local solo expone `public`; no demuestra la configuración alojada. Las herramientas MCP disponibles no exponen los ajustes hospedados de Auth/Data API. No se afirma una prueba HTTP con clave publishable ni inicio de sesión real de personal.
 
-Este contrato documenta objetos SQL existentes. Hay un panel interno temporal en /internal/qa y una ruta de servidor protegida /internal/qa/api; ver [QA-PANEL.md](QA-PANEL.md). La publicación revisada dispone de qa_publication_check y qa_publish_company para personal activo. No hay recepción pública de reportes ni RPC de fusión con traslado automático de hechos. No hay clientes, cuentas empresariales, reclamaciones, leads, pagos ni Storage.
+Este contrato documenta objetos SQL existentes. Hay un panel interno temporal en /internal/qa y una ruta de servidor protegida /internal/qa/api; ver [QA-PANEL.md](QA-PANEL.md). La publicación revisada dispone de qa_publication_check y qa_publish_company para personal activo. La ampliación de reportes del 19/11 implementa recepción pública en código; su aplicación alojada está pendiente del MCP directo. No hay RPC de fusión con traslado automático de hechos. No hay clientes, cuentas empresariales, reclamaciones, leads, pagos ni Storage.
 
 ## Acceso y autenticación
 
@@ -347,7 +347,7 @@ Hay FK compuestas para coherencia de país/padre, categoría/servicio y empresa/
 
 Las seis tablas privadas son `data_sources`, `company_sources`, `company_editorial`, `company_reports`, `staff_roles` y `audit_log`. Su diccionario detallado está en v0.3; su DDL concreto en las migraciones. No son entidades consumibles por el frontend público. Las 25 funciones auxiliares privadas implementan políticas, integridad y auditoría; no son una API editorial.
 
-No existe RPC anónima para insertar reportes. El panel guarda reportes internos mediante qa_save con sesión y RLS; El futuro endpoint de servidor debe validar empresa publicable, tipo, mensaje de 1–4000 caracteres, correo opcional, aviso de privacidad y límites de frecuencia/abuso; no dar INSERT al navegador ni crear cuentas o leads. No está implementado ni se anuncia como operativo. Retención/purga y responsable de bandeja siguen pendientes.
+El navegador no recibe EXECUTE sobre la nueva RPC de ingreso ni privilegios privados. La recepción se implementa en el endpoint Next.js descrito abajo y la moderación conserva qa_save con sesión/RLS. La migración nueva sigue pendiente de aplicación alojada. El aviso final, la retención de negocio y el responsable de bandeja siguen pendientes.
 
 La publicación revisada y su comprobación están integradas en QA mediante qa_publish_company y qa_publication_check. La fusión y el traslado de evidencia requieren operaciones administrativas transaccionales explícitas aún no automatizadas. Existen restricciones de coherencia y alias y auditoría; no hay un RPC de fusión que mueva automáticamente los hechos. La aplicación debe invalidar cachés y sitemap al cambiar elegibilidad; esta entrega no crea ese mecanismo.
 
@@ -362,7 +362,7 @@ La publicación revisada y su comprobación están integradas en QA mediante qa_
 | Duplicado (`23505`) | Revisar conflicto; no fusionar automáticamente |
 | CHECK/trigger (`23514`) | Corregir dato/evidencia según regla; sin mostrar detalles privados al visitante |
 
-No asumir un código HTTP de un endpoint propio inexistente. La aplicación debe tratar el `error` devuelto por el cliente y depurar los mensajes antes de mostrarlos. Una actualización que afecta cero filas puede ser una denegación por RLS; no declararla exitosa solo por ausencia de excepción.
+Los códigos SQL de esta sección corresponden al cliente Supabase; los HTTP del nuevo endpoint se detallan abajo. La aplicación debe tratar el `error` devuelto por el cliente y depurar los mensajes antes de mostrarlos. Una actualización que afecta cero filas puede ser una denegación por RLS; no declararla exitosa solo por ausencia de excepción.
 
 ## Variables y pendientes de lanzamiento
 
@@ -379,3 +379,81 @@ Ver [validación alojada](hosted-validation-2026-11-17.md) y [relación de versi
 companies.qa_test_batch UUID nullable identifica fixtures de desarrollo, es inmutable y prohíbe publicar la empresa marcada. Los nombres QA TEST exigen marcador. No cambia las reglas del directorio real. La limpieza del panel es archivado de una sola empresa marcada, sin DELETE ni pérdida de auditoría.
 
 RPC en public, todas SECURITY INVOKER: qa_staff_context, qa_records, qa_save, qa_publication_check, qa_publish_company, qa_duplicate_candidates, qa_archive_test_company y qa_set_market_status para authenticated, con rol HUT comprobado y RLS. qa_bootstrap_status y qa_bootstrap_admin son solo de operador/service_role, de un solo uso mientras no exista personal. No reciben SQL arbitrario ni permiten autoasignación de roles. El esquema private sigue fuera de la API pública. Los cambios editoriales registran estados anterior/nuevo y revisión de duplicados en auditoría sin copiar motivos libres.
+
+## Ampliación de reportes privados — 19/11/2026
+
+Código implementado; **migración alojada pendiente**, sin verificación del estado remoto actual: el servidor MCP directo no aparece entre las herramientas de este chat después de reautenticar. No utilizar Supabase CLI, conector de plugins ni otra vía para aplicar SQL remoto. No hay despliegue público. Los tipos generados `database.types.ts` describen la generación alojada anterior; regenerarlos por MCP después de aplicar y verificar esta migración.
+
+Migración local nueva: `20261119210627_company_report_ingress.sql`. Conserva las diez anteriores sin editar y amplía `private.company_reports`. Añade `submission_origin_hash`, `content_fingerprint`, `abuse_data_expires_at`, `duplicate_submission_count` (0), `last_repeated_at`, `similar_report_id` (FK a otro reporte). Solo se guardan hashes HMAC, nunca IP ni token sin transformar. Las 18 tablas de negocio se conservan; se añade únicamente `private.company_report_rate_limits` para cuotas/proof replay entre instancias, con RLS y acceso solo de operador/service_role. No es otra bandeja de denuncias. Las 64 políticas previas se conservan.
+
+### Contrato público HTTP
+
+`POST /api/company-reports`, runtime Node.js, sin sesión ni cuenta. `Content-Type: application/json`; cuerpo UTF-8 máximo **32768 bytes reales**, incluso sin Content-Length. Requiere Origin permitido y Host coincidente; no permite CORS a otros orígenes. No enviar JWT ni clave Supabase en el navegador para esta operación.
+
+| Campo JSON | Requerido | Validación |
+| --- | --- | --- |
+| `company_id` | Sí | UUID público canónico, variantes RFC válidas, versión 1–8; la empresa debe seguir siendo publicable según el predicado editorial completo |
+| `report_type` | Sí | Uno de los nueve tipos siguientes, exacto |
+| `message` | Sí | String, trim, 10–4000 unidades UTF-16; sin controles C0/C1 excepto tabulador y saltos de línea |
+| `reply_email` | No | String, null, vacío u omitido; trim y minúsculas; máximo 254 caracteres; estructura local@dominio.sufijo, sin espacios/controles; no acredita identidad ni entrega |
+| `turnstile_token` | Sí | String no vacío, sin espacios/controles, máximo 2048 caracteres; token fresco de Turnstile para esta acción/origen |
+| `website` | No | Honeypot, string máximo 200; dejar vacío u omitir. Si contiene texto se confirma genéricamente y se descarta sin almacenar |
+
+Se rechazan campos desconocidos, incluidos estado, rol, asignación, decisiones, versión de aviso y hashes. La versión de aviso procede de configuración aprobada del servidor, nunca del visitante.
+
+Tipos existentes: `correction`, `outdated_contact`, `closure`, `removal`, `duplicate`. Nuevos: `bad_service` (experiencia de servicio), `no_response` (falta de respuesta), `suspected_fraud` (**sospecha sin verificar**), `other_problem`. No estrellas, rankings, calificaciones o denuncias públicas.
+
+```json
+{
+  "company_id": "UUID_PUBLICO_REAL",
+  "report_type": "no_response",
+  "message": "Descripción breve de lo ocurrido, sin documentos ni datos innecesarios.",
+  "reply_email": null,
+  "turnstile_token": "TOKEN_FRESCO_DE_LA_ACCION_company_report"
+}
+```
+
+| HTTP | JSON exacto / interpretación |
+| --- | --- |
+| 202 | `{"accepted":true,"message":"Solicitud recibida para revisión."}`. Igual para creación, duplicado suprimido y honeypot. No promete investigación favorable, sanción ni respuesta por email |
+| 400 | `{"error":"No se pudo recibir la solicitud."}`; formato/campos inválidos |
+| 403 | Mismo JSON genérico; origen o prueba antiautomatización rechazada/reutilizada |
+| 404 | Mismo JSON genérico para empresa inexistente o no publicable; no distingue borradores |
+| 413 | Mismo JSON genérico; cuerpo excesivo |
+| 415 | Mismo JSON genérico; tipo de contenido incorrecto |
+| 429 | `{"error":"Inténtalo de nuevo más tarde."}`, `Retry-After: 600`; puede seguir limitado por la ventana horaria/diaria, no reintentar en bucle |
+| 503 | JSON genérico; deshabilitado/configuración incompleta, proveedor, base de datos o IP de proxy no confiable |
+
+Todos llevan `Cache-Control: no-store, private`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`. No se devuelven UUID de reporte, estado privado, mensaje, email, notas, coincidencias, SQL ni respuesta del proveedor. No hay lectura pública por ID. Next aplica su respuesta de método no permitido a otros métodos. Los errores previos a este handler pueden seguir el formato de plataforma; el frontend debe tolerarlos sin volcar contenido privado a analítica.
+
+### Abuso, confidencialidad y limitaciones
+
+Turnstile se verifica **en servidor** con Siteverify (timeout 5 s), `success`, acción exacta `company_report`, hostname en lista y challenge de hasta 300 s (máximo 30 s de desfase futuro). Fallos de proveedor cierran el ingreso. No se envía remoteip a Siteverify ni se registra token. La base consume además un hash del proof una sola vez, atómicamente entre instancias; caduca a los 10 minutos. El frontend futuro obtendrá tokens con su site key pública y renovará el desafío para otro intento. No se ha construido el formulario ni configurado un widget externo. Ver [validación oficial de Turnstile](https://developers.cloudflare.com/turnstile/get-started/server-side-validation/).
+
+El adaptador de producción inicial exige Vercel (`VERCEL=1` y `HUT_REPORTS_IP_SOURCE=vercel`) y usa exclusivamente `x-vercel-forwarded-for` validado/canonizado. No acepta X-Forwarded-For arbitrario, listas de IP ni proxies sin adaptar y revisar. Vercel debe ser el proxy público directo; una capa intermedia puede agrupar visitantes. Otro hosting queda cerrado hasta disponer de un adaptador confiable. Ver [cabeceras de Vercel](https://vercel.com/docs/headers/request-headers). Loopback solo funciona fuera de producción, con QA habilitado, Origin local exacto e IP fija; ignora cabeceras aportadas por el cliente y conserva CAPTCHA real.
+
+La IP solo vive durante la petición; se deriva un HMAC-SHA256 con secreto de servidor y día UTC. El presupuesto se comparte en PostgreSQL, con upsert atómico, por origen derivado: **5 aceptaciones/10 min, 20/día UTC, 3/hora/empresa**, ventanas fijas. Cuenta también repeticiones válidas con token nuevo; no cuenta peticiones fallidas que revierten. Una IP compartida comparte presupuesto; los límites no prueban identidad y se reinician en fronteras de ventana/día. No hay identificador público permanente ni contador en memoria para este endpoint.
+
+Una huella HMAC de empresa+tipo+texto normalizado (NFKC, minúsculas, espacios colapsados; no incluye email) detecta repetición: mismo origen/contenido dentro de 15 min incrementa contador en el primer reporte, sin volver a guardar ni sustituir su email/texto. Otro origen/contenido igual en 24 h crea un caso vinculado mediante `similar_report_id`. Esto es una señal técnica, no corroboración. No cambia publicación, calidad, roles o propiedad y no genera sanciones por umbral.
+
+Los hashes de reportes dejan de utilizarse al expirar y se limpian a las 48 h mediante mantenimiento; contadores duran hasta fin de ventana+24 h (máximo 48 h), proof hashes 10 min. `maintain_company_report_ingress(p_limit=200)` elimina por lote (máximo 500 de cada clase), solo operador/service_role. También se llama con 100 al aceptar ingresos. **Antes de exposición pública falta configurar una tarea horaria segura y vigilancia del atraso**, repitiendo lotes hasta vaciar vencidos: sin ella y sin tráfico no se garantiza borrado físico al vencer. No se afirma un scheduler desplegado.
+
+Faltan además reglas de plataforma/WAF para tráfico masivo y cuerpos lentos/voluminosos antes de Node, configuración Turnstile real, protección de logs del hosting sin cuerpos/correos/tokens/IP innecesaria y verificación de cabeceras en hosting real. CAPTCHA y cuotas no sustituyen protección de infraestructura. El endpoint se entrega deshabilitado por defecto y **no está listo para exposición pública**.
+
+### Contrato administrativo privado
+
+Se conservan sesión Auth comprobada en servidor, `private.staff_roles` activo y las RLS existentes. Ninguna cuenta visitante. El futuro panel deberá implementar su propio puente de servidor autenticado; el puente QA es temporal, limitado a loopback y no debe convertirse en API comercial pública.
+
+| Operación | Contrato / autorización |
+| --- | --- |
+| Listar historial/cola | `qa_company_reports(p_company_id uuid=NULL,p_type text=NULL,p_status text=NULL,p_repeated_only boolean=false,p_limit integer=50,p_offset integer=0)`; `authenticated` con personal activo; máximo 100, offset 0–10000. Devuelve `{rows,limit,offset}`, sin total, orden created_at DESC,id; omite ambos hashes |
+| Filtros QA | `GET /internal/qa/api?action=company-reports&company=UUID&type=bad_service&status=new&repeated=true&offset=0`; todos los filtros son opcionales, página fija 50. Empresa vacía=todas, tipo/estado vacío=todos. `repeated` solo true/false. Registro genérico de reportes también usa la proyección sin hashes |
+| Revisar/resolver | `POST /internal/qa/api` con `{action:"save",entity:"company_reports",id:UUID,data:{status:"in_review",assigned_to:UUID}}`, o status cerrado con resolution_action y resolution_summary. Internamente `qa_save`, RLS y validación de campos existente |
+| Depurar | Admin, `{action:"purge-reports",confirm:true}`; llama `qa_purge_due_company_reports(p_limit=100)` y devuelve `{result:{purged_reports:N}}`. Solo casos cerrados y fecha de eliminación vencida aprobada; operación irreversible de PII, no borra fila/auditoría |
+| Decisión sobre empresa | Operación humana separada en los flujos editoriales existentes (`qa_save` de company_editorial/entidad afectada, publicación revisada); permisos sensibles de admin vigentes. Resolver un reporte no ejecuta la decisión automáticamente |
+
+Estados conservados: `new`, `in_review`, `awaiting_info`, `resolved`, `dismissed`. Cierre exige `resolution_action` (`corrected`, `partially_corrected`, `hidden`, `withdrawn`, `merged`, `no_change`), resumen mínimo y fecha de cierre fijada por servidor. Marcar merged no fusiona registros. `assigned_to` referencia Auth existente; el operador debe asignar solo personal autorizado. Los reportes purgados mantienen texto/email nulos, bloqueados por CHECK; el panel no permite volver a introducirlos. La tabla conserva referencias, tipo, resolución mínima y fechas. No repetir PII ni acusaciones completas en resolution_summary.
+
+La fecha `personal_data_delete_after` se aprueba por caso después del cierre. v0.3 propone 90 días, pero la política final y el responsable siguen pendientes: **no se programa ese plazo por defecto**. La operación de depuración elimina message, reply_email y hashes; audit_log sigue guardando actor/operación/entidad sin sus valores. Nunca enviar reportes a GA4, usarlos como leads, revelar remitente a la empresa automáticamente, ejecutar HTML/Markdown recibido ni incluir cargas en logs. El panel usa texto escapado por React, sin HTML inyectado. No se envían emails de seguimiento automáticamente.
+
+Configuración y recorrido manual: [REPORTS.md](REPORTS.md). La migración nueva y pruebas locales no demuestran la configuración hospedada de Data API/Auth, la disponibilidad real de Turnstile ni la aplicación remota.

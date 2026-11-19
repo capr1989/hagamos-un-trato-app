@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { checkRequest, publicClient, requireStaff, sessionContext, setSessionCookies, closeAuthSession, operatorClient, jsonBody, rateLimit } from '@/lib/qa/server';
 import { QaError, searchArguments, uuid, boundedInt, ownPasswordInput } from '@/lib/qa/policy';
 import { entities } from '@/lib/qa/schema';
+import { REPORT_TYPES, REPORT_STATUSES } from '@/lib/company-reports/contract';
 import evidence from '../../../../../supabase/qa-verification.json';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -24,12 +25,18 @@ export async function GET(request: Request) {
     if (params.get('action') === 'session') return respond({ identity: (await sessionContext())?.identity || null });
     const session = await requireStaff();
     if (params.get('action') === 'overview') {
-      const entries = await Promise.all(Object.keys(entities).filter(name => name !== 'audit_log' && (name !== 'staff_roles' || session.identity.role === 'admin')).map(async name => [name, result(await session.client.rpc('qa_records', { p_entity: name, p_limit: 200 }))]));
+      const entries = await Promise.all(Object.keys(entities).filter(name => !['audit_log','company_reports'].includes(name) && (name !== 'staff_roles' || session.identity.role === 'admin')).map(async name => [name, result(await session.client.rpc('qa_records', { p_entity: name, p_limit: 200 }))]));
       return respond({ rows: Object.fromEntries(entries), identity: session.identity, limit: 200 });
+    }
+    if (params.get('action') === 'company-reports') {
+      const type=params.get('type') || null;const status=params.get('status') || null;
+      if(type && !(REPORT_TYPES as readonly string[]).includes(type) || status && !(REPORT_STATUSES as readonly string[]).includes(status) || ![null,'true','false'].includes(params.get('repeated'))) throw new QaError('Filtro de reportes inválido.');
+      return respond(result(await session.client.rpc('qa_company_reports',{p_company_id:params.get('company')?uuid(params.get('company')):null,p_type:type,p_status:status,p_repeated_only:params.get('repeated')==='true',p_limit:50,p_offset:boundedInt(params.get('offset'),0,10000,0)})));
     }
     if (params.get('action') === 'records') {
       const entity = params.get('entity') || '';
       if (!Object.hasOwn(entities,entity)) throw new QaError('Entidad inválida.');
+      if(entity==='company_reports')return respond(result(await session.client.rpc('qa_company_reports',{p_company_id:params.get('company')?uuid(params.get('company')):null,p_limit:100,p_offset:boundedInt(params.get('offset'),0,10000,0)})));
       return respond({ rows: result(await session.client.rpc('qa_records', { p_entity: entity, p_company_id: params.get('company') ? uuid(params.get('company')) : null, p_limit: 100, p_offset: boundedInt(params.get('offset'),0,10000,0) })) });
     }
     throw new QaError('Acción desconocida.', 404);
@@ -53,6 +60,11 @@ export async function POST(request: Request) {
     }
     const session = await requireStaff();
     rateLimit(`write:${session.identity.user.id}`,120,60000);
+    if (body.action === 'purge-reports') {
+      if(session.identity.role!=='admin')throw new QaError('Se requiere administrador.',403);
+      if(body.confirm!==true)throw new QaError('Falta confirmación explícita.');
+      return respond({result:result(await session.client.rpc('qa_purge_due_company_reports',{p_limit:100}))});
+    }
     if (body.action === 'change-password') {
       rateLimit(`password:${session.identity.user.id}`,5,300000);
       const password=ownPasswordInput(body);

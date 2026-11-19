@@ -4,6 +4,7 @@ import type { FormEvent } from 'react';
 import type { Identity } from '@/lib/qa/server';
 import { entities, groups, rowLabel } from '@/lib/qa/schema';
 import type { Row, Field } from '@/lib/qa/schema';
+import { REPORT_TYPES, REPORT_STATUSES } from '@/lib/company-reports/contract';
 type Rows = Record<string, Row[]>;
 type Api = { identity?: Identity | null; rows?: Rows; row?: Row; result?: unknown; [key:string]:unknown };
 async function api(body?: Record<string,unknown>, query=''): Promise<Api> {
@@ -66,7 +67,9 @@ function RecordForm({entity,row,rows,company,onSaved,admin}:{entity:string;row:R
     {entity==='companies'&&!row&&!test&&<p className="warning">Solo datos empresariales reales respaldados. La publicación requiere revisión independiente.</p>}
     <div className="fields">{definition.fields.map(field=>{
       const value=values[field.name]||'';
-      const disabled=!!row&&(field.name===definition.pk||(entity==='company_contacts'&&['value','channel'].includes(field.name)));
+      const purged=entity==='company_reports'&&!!row?.personal_data_purged_at&&['message','reply_email'].includes(field.name);
+      const required=field.required&&!purged;
+      const disabled=purged||!!row&&(field.name===definition.pk||(entity==='company_contacts'&&['value','channel'].includes(field.name)));
       let options=field.ref?(rows[field.ref]||[]):[];
       if(field.ref==='services'&&values.category_id) options=options.filter(r=>r.category_id===values.category_id);
       if(['company_branches','company_offerings','company_contacts'].includes(field.ref||'')&&(values.company_id||company)) options=options.filter(r=>r.company_id===(values.company_id||company));
@@ -74,8 +77,8 @@ function RecordForm({entity,row,rows,company,onSaved,admin}:{entity:string;row:R
         {field.ref?<select value={value} disabled={disabled} required={field.required} onChange={e=>setValues({...values,[field.name]:e.target.value})}><option value="">— Selecciona —</option>{options.map(r=><option key={String(r[entities[field.ref!].pk])} value={String(r[entities[field.ref!].pk])}>{rowLabel(field.ref!,r)}</option>)}</select>:
           field.values?<select value={value} disabled={disabled} onChange={e=>setValues({...values,[field.name]:e.target.value})}>{!field.values.includes(value)&&value&&<option value={value}>{value} (estado actual)</option>}{field.values.map(v=><option key={v} value={v}>{v||'— Sin valor —'}</option>)}</select>:
           field.type==='boolean'?<select value={value} onChange={e=>setValues({...values,[field.name]:e.target.value})}><option value="false">No</option><option value="true">Sí</option></select>:
-          field.type==='textarea'?<textarea value={value} required={field.required} maxLength={field.name==='message'?4000:10000} onChange={e=>setValues({...values,[field.name]:e.target.value})}/>:
-          <input value={value} disabled={disabled} required={field.required} type={field.type==='date'?'datetime-local':field.type==='number'?'number':'text'} maxLength={1000} onChange={e=>setValues({...values,[field.name]:e.target.value})}/>}
+          field.type==='textarea'?<textarea value={value} disabled={disabled} required={required} maxLength={field.name==='message'?4000:10000} onChange={e=>setValues({...values,[field.name]:e.target.value})}/>:
+          <input value={value} disabled={disabled} required={required} type={field.type==='date'?'datetime-local':field.type==='number'?'number':'text'} maxLength={1000} onChange={e=>setValues({...values,[field.name]:e.target.value})}/>}
         {field.hint&&<small>{field.hint}</small>}
       </label>;
     })}</div>
@@ -85,7 +88,7 @@ function RecordForm({entity,row,rows,company,onSaved,admin}:{entity:string;row:R
 }
 function DataTable({entity,rows,onEdit}:{entity:string;rows:Row[];onEdit?:(row:Row)=>void}) {
   if(!rows.length)return <p className="muted">Sin registros. Esto no es un error.</p>;
-  const keys=Object.keys(rows[0]).filter(k=>!['description','evidence_note','message','change_summary'].includes(k)).slice(0,8);
+  const keys=entity==='company_reports'?['created_at','company_id','report_type','status','duplicate_submission_count','similar_report_id']:Object.keys(rows[0]).filter(k=>!['description','evidence_note','message','change_summary'].includes(k)).slice(0,8);
   return <div className="table-wrap"><table><thead><tr>{keys.map(k=><th key={k}>{k}</th>)}<th>Detalle</th></tr></thead><tbody>{rows.map((row,index)=><tr key={String(row[entities[entity]?.pk||'company_id']||index)}>{keys.map(k=><td key={k}>{String(row[k]??'—').slice(0,100)}</td>)}<td>{onEdit&&<button className="secondary" onClick={()=>onEdit(row)}>Editar</button>}<details><summary>JSON</summary><pre>{JSON.stringify(row,null,2)}</pre></details></td></tr>)}</tbody></table></div>;
 }
 function SearchSimulator({rows}:{rows:Rows}) {
@@ -104,6 +107,25 @@ function SearchSimulator({rows}:{rows:Rows}) {
     <label className="check"><input type="checkbox" checked={filters.presence} onChange={e=>setFilters({...filters,presence:e.target.checked})}/>Solo presencia documentada</label>
     <label className="check"><input type="checkbox" checked={filters.confirmed} onChange={e=>setFilters({...filters,confirmed:e.target.checked})}/>Solo cobertura confirmada</label><button disabled={busy}>Consultar RPC</button>
   </form>{error&&<p role="alert" className="error">{error}</p>}{output&&<><p>{String(output.context)} · {returned.length} empresas · offset {filters.offset}</p><DataTable entity="search" rows={returned}/><div className="actions"><button disabled={busy||filters.offset===0} onClick={()=>void search(Math.max(0,filters.offset-filters.limit))}>Anterior</button><button disabled={busy||returned.length<filters.limit} onClick={()=>void search(filters.offset+filters.limit)}>Siguiente</button></div><h3>Contexto de ofertas en la vista</h3><p>{String(output.offering_note)}</p><DataTable entity="projection" rows={Array.isArray(output.offerings)?output.offerings as Row[]:[]}/></>}</section>;
+}
+function ReportInbox({company,revision,onEdit,admin}:{company:string;revision:Rows;onEdit:(row:Row)=>void;admin:boolean}) {
+  const [type,setType]=useState('');const [status,setStatus]=useState('');const [repeated,setRepeated]=useState(false);
+  const [offset,setOffset]=useState(0);const [records,setRecords]=useState<Row[]>([]);const [message,setMessage]=useState('');const [busy,setBusy]=useState(false);
+  const load=useCallback(async(page:number)=>{setBusy(true);setMessage('');try{
+    const query=new URLSearchParams({action:'company-reports',company,type,status,repeated:String(repeated),offset:String(page)});
+    const response=await api(undefined,`?${query}`);setRecords(Array.isArray(response.rows)?response.rows as Row[]:[]);setOffset(page);
+  }catch(error){setMessage(error instanceof Error?error.message:'Error de consulta.');}finally{setBusy(false);}},[company,type,status,repeated]);
+  useEffect(()=>{setRecords([]);void load(0);},[load,revision]);
+  async function purge(){if(!window.confirm('¿Depurar mensajes y correos de hasta 100 reportes cerrados con fecha de eliminación ya vencida? Esta acción no se puede deshacer.'))return;
+    try{const response=await api({action:'purge-reports',confirm:true});await load(0);setMessage(JSON.stringify(response.result));}catch(error){setMessage(error instanceof Error?error.message:'Error de depuración.');}}
+  return <div><p>Señales privadas sin verificar. Las repeticiones no demuestran una acusación ni cambian la publicación. Selecciona una empresa arriba para consultar su historial completo por páginas.</p>
+    <div className="fields"><label>Tipo<select value={type} onChange={e=>setType(e.target.value)}><option value="">Todos</option>{REPORT_TYPES.map(t=><option key={t}>{t}</option>)}</select></label>
+    <label>Estado<select value={status} onChange={e=>setStatus(e.target.value)}><option value="">Todos</option>{REPORT_STATUSES.map(s=><option key={s}>{s}</option>)}</select></label>
+    <label className="check"><input type="checkbox" checked={repeated} onChange={e=>setRepeated(e.target.checked)}/>Solo señales repetidas</label></div>
+    {message&&<p role="status">{message}</p>}<DataTable entity="company_reports" rows={records} onEdit={onEdit}/>
+    <div className="actions"><button disabled={busy||offset===0} onClick={()=>void load(Math.max(0,offset-50))}>Anteriores</button><button disabled={busy||records.length<50||offset>=10000} onClick={()=>void load(offset+50)}>Siguientes</button><button disabled={busy} onClick={()=>void load(offset)}>Actualizar reportes</button>{admin&&<button className="danger" disabled={busy} onClick={()=>void purge()}>Depurar datos personales vencidos</button>}</div>
+    <p>Página de 50 · offset {offset}. La depuración exige cierre y una fecha aprobada; no se presume una política de 90 días. La resolución debe conservar solo un resumen mínimo, sin identidad ni acusaciones copiadas.</p>
+  </div>;
 }
 function OwnPasswordChange() {
   const [message,setMessage]=useState('');const [busy,setBusy]=useState(false);
@@ -156,7 +178,7 @@ export default function QaPanel({initialIdentity}:{initialIdentity:Identity|null
         <div className="actions">{groups[group].map(name=><button className={entity===name?'':'secondary'} key={name} onClick={()=>{setEntity(name);setEdit(null);if(name==='audit_log')void audit(0);}}>{entities[name].title}</button>)}<button className="secondary" onClick={()=>void refresh().catch(e=>setMessage(e.message))}>Actualizar listas</button></div>
         <h3>{entities[entity].title}</h3><p className="muted">Listas de trabajo: máximo 200 registros por entidad. Auditoría paginada por 100. No se ejecutan borrados masivos.</p>
         {entity==='audit_log'&&<div className="actions"><button disabled={busy||auditOffset===0} onClick={()=>void audit(Math.max(0,auditOffset-100))}>Anteriores</button><button disabled={busy||(rows.audit_log||[]).length<100} onClick={()=>void audit(auditOffset+100)}>Siguientes</button></div>}
-        <DataTable entity={entity} rows={visibleRows} onEdit={entities[entity].readonly||(entities[entity].admin&&!admin)?undefined:setEdit}/>
+        {entity==='company_reports'?<ReportInbox company={company} revision={rows} onEdit={setEdit} admin={admin}/>:<DataTable entity={entity} rows={visibleRows} onEdit={entities[entity].readonly||(entities[entity].admin&&!admin)?undefined:setEdit}/>}
         {entity==='directory_markets'&&edit&&admin&&<div className="market-action"><label className="check"><input type="checkbox" checked={documented} onChange={e=>setDocumented(e.target.checked)}/>He revisado el ámbito territorial y la referencia documental; no confundo ciudad, distrito ni provincia.</label><div className="actions"><button disabled={busy||!documented} onClick={()=>{if(window.confirm('¿Activar este mercado de desarrollo con ámbito documentado?'))void action({action:'market-status',market_id:edit.id,status:'active',documented});}}>Activar mercado revisado</button><button disabled={busy} onClick={()=>void action({action:'market-status',market_id:edit.id,status:'paused'})}>Pausar mercado</button></div></div>}
         {!entities[entity].readonly&&<><button className="secondary" onClick={()=>setEdit(null)}>Preparar nuevo registro</button><RecordForm entity={entity} row={edit} rows={rows} company={company} admin={admin} onSaved={refresh}/></>}
         {['Empresas','Revisión editorial'].includes(group)&&company&&<aside><h3>Control de la empresa seleccionada</h3><div className="actions"><button disabled={busy} onClick={()=>void action({action:'check-publication',company_id:company})}>Comprobar requisitos de publicación</button><button disabled={busy} onClick={()=>void action({action:'duplicates',company_id:company})}>Buscar señales de duplicados</button><button disabled={busy} onClick={()=>{if(window.confirm('¿Publicar la empresa real seleccionada si cumple todos los requisitos? Los datos QA TEST se rechazan.'))void action({action:'publish',company_id:company,confirm:true});}}>Intentar publicación revisada</button>{admin&&<button className="danger" disabled={busy} onClick={()=>{if(window.confirm('¿Archivar únicamente esta empresa marcada QA TEST y sus componentes? Se conserva auditoría y no se borra información real.'))void action({action:'archive-test',company_id:company,confirm:true});}}>Limpiar prueba (archivar)</button>}</div><p>La limpieza es archivado seguro de una sola empresa marcada. No borra auditoría ni fuentes compartidas. Las coincidencias nunca fusionan empresas automáticamente.</p></aside>}

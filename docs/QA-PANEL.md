@@ -81,7 +81,7 @@ npm run qa:smoke-http
 npm run qa:smoke-public
 ```
 
-La suite reconstruye las diez migraciones en PGlite y revierte fixtures; la CI también utiliza Supabase local/PostgreSQL 17. Los datos ficticios de las pruebas positivas no se publican en la base alojada. Los diagnósticos de infraestructura corresponden al archivo fechado `supabase/qa-verification.json` y pueden volver a comprobarse mediante MCP directo. Las pruebas de sesión real con email/contraseña requieren que el operador complete bootstrap.
+La suite reconstruye las once migraciones en PGlite y revierte fixtures; la CI también utiliza Supabase local/PostgreSQL 17. Los datos ficticios de las pruebas positivas no se publican en la base alojada. Los diagnósticos de infraestructura corresponden al archivo fechado `supabase/qa-verification.json` y pueden volver a comprobarse mediante MCP directo. Las pruebas de sesión real con email/contraseña requieren que el operador complete bootstrap.
 
 ## Ajustes manuales y límites
 
@@ -92,4 +92,12 @@ Comprobar en el proyecto alojado (no afirmar verificados por este código):
 - SMTP se necesita si posteriormente se usan invitaciones/recuperación; este panel implementa creación administrativa, no un flujo de invitaciones.
 - Delimitación documental de Ciudad de Panamá antes de crear/activar su mercado. Retención, revisión y responsabilidades editoriales antes del lanzamiento.
 
-No incluye fusión con traslado automático de hechos, purga física de datos, endpoint público de reportes, administración comercial definitiva, analítica ni despliegue. Los reportes se registran y resuelven internamente; las decisiones no conceden propiedad o membresías. La auditoría conserva operación/actor/entidad y las transiciones controladas de estado editorial, sin copiar motivos libres, mensajes o contactos completos.
+No incluye fusión con traslado automático de hechos, administración comercial definitiva, analítica ni despliegue. La ampliación del 19/11 añade recepción pública de reportes en código, con migración alojada pendiente y configuración obligatoria, y depuración de mensaje/correo de casos cerrados con fecha aprobada; las decisiones no conceden propiedad o membresías. La auditoría conserva operación/actor/entidad y las transiciones controladas de estado editorial, sin copiar motivos libres, mensajes o contactos completos.
+
+## Ampliación puntual de reportes (19/11)
+
+En **Revisión editorial → Correcciones y solicitudes de retirada** se mantienen formulario y estados. Se añaden bad_service, no_response, suspected_fraud y other_problem; una sospecha no acredita un hecho. Filtros tipo/estado y empresa seleccionada consultan la base por páginas de 50; solo repetidos muestra supresiones y casos relacionados. El detalle incluye contador, última repetición y similar_report_id, sin hashes técnicos. Se puede revisar el historial paginado de la empresa elegida, asignar, marcar in_review/awaiting_info y cerrar con acción/resumen mínimo.
+
+Editor/admin revisan bajo RLS; decisiones sensibles sobre la empresa siguen requiriendo autorización existente y una operación separada. No hay sanciones por número de reportes. Admin dispone de **Depurar datos personales vencidos** con confirmación explícita: elimina texto/email/hashes de hasta 100 casos cerrados y con fecha aprobada ya vencida; mantiene la fila y auditoría mínima. Los campos purgados quedan bloqueados. No asigna 90 días por defecto ni configura una tarea programada.
+
+Antes de usar estas acciones contra el proyecto alojado debe aplicarse/verificarse la migración nueva por MCP directo. Hasta entonces las llamadas nuevas pueden fallar; el resto de pestañas no requiere esa migración. Consultar [REPORTS.md](REPORTS.md) para configuración, pruebas manuales y límites pendientes. El panel conserva su restricción a desarrollo loopback.
