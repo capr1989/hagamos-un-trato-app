@@ -159,7 +159,7 @@ function StaffMfa({identity,onVerified}:{identity:Identity;onVerified:(value:Ide
     <p>Usa una aplicación TOTP compatible con Google Authenticator. Una sesión que ya alcanzó AAL2 se conserva durante la navegación; una sesión nueva requiere su propio desafío.</p>
     {!enrollment&&factors.length<2&&(factors.length===0||identity.aal==='aal2')&&<button disabled={busy} onClick={()=>void enroll()}>{factors.length?'Agregar autenticador de respaldo':'Configurar autenticador'}</button>}
     {enrollment&&<><p>Escanea este QR con tu aplicación. El secreto se muestra solo durante esta inscripción y no se guarda en HUT.</p>
-      <img src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(enrollment.qr_code)}`} alt="Código QR para configurar el autenticador TOTP" width={220} height={220}/>
+      <img src={enrollment.qr_code} alt="Código QR para configurar el autenticador TOTP" width={220} height={220}/>
       <details><summary>Introducir clave manualmente</summary><code>{enrollment.secret}</code></details></>}
     {(enrollment||identity.aal!=='aal2'&&factors.length>0)&&<form onSubmit={verify} className="fields">{!enrollment&&factors.length>1&&<label>Autenticador<select value={selectedFactor} onChange={event=>setSelectedFactor(event.target.value)}>{factors.map(factor=><option key={factor.id} value={factor.id}>{factor.friendly_name||factor.id}</option>)}</select></label>}<label>Código de seis dígitos<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required value={code} onChange={event=>setCode(event.target.value)}/></label><button disabled={busy}>Verificar código</button></form>}
     {message&&<p role="alert" className="error">{message}</p>}
