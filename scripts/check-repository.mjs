@@ -5,7 +5,7 @@ import path from 'node:path';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const read=(p)=>readFile(path.join(root,p),'utf8');
 const files=(await readdir(path.join(root,'supabase/migrations'))).filter(f=>f.endsWith('.sql')).sort();
-assert.equal(files.length,11);
+assert.equal(files.length,12);
 assert.equal(new Set(files.map(f=>f.slice(0,14))).size,files.length,'Migration versions must be unique');
 const migrations=(await Promise.all(files.map(f=>read('supabase/migrations/'+f)))).join('\n');
 const tables=[...migrations.matchAll(/create table (public|private)\.([a-z_]+)/g)].map(m=>m[1]+'.'+m[2]);

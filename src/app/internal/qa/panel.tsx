@@ -144,6 +144,27 @@ function OwnPasswordChange() {
     <button disabled={busy}>Actualizar mi contraseña</button>
   </form>{message&&<p role="status">{message}</p>}</details>;
 }
+function StaffMfa({identity,onVerified}:{identity:Identity;onVerified:(value:Identity)=>void}) {
+  const [factors,setFactors]=useState<{id:string;friendly_name?:string}[]>([]);
+  const [selectedFactor,setSelectedFactor]=useState('');
+  const [enrollment,setEnrollment]=useState<{factor_id:string;qr_code:string;secret:string}|null>(null);
+  const [code,setCode]=useState('');const [message,setMessage]=useState('');const [busy,setBusy]=useState(false);
+  useEffect(()=>{void api(undefined,'?action=mfa').then(data=>{const listed=(data.factors||[]) as typeof factors;setFactors(listed);setSelectedFactor(listed[0]?.id||'');}).catch(error=>setMessage(error.message));},[]);
+  async function enroll(){setBusy(true);setMessage('');try{const data=await api({action:'mfa-enroll'});setEnrollment(data as typeof enrollment);}
+    catch(error){setMessage(error instanceof Error?error.message:'No se pudo preparar MFA.');}finally{setBusy(false);}}
+  async function verify(event:FormEvent<HTMLFormElement>){event.preventDefault();setBusy(true);setMessage('');
+    try{const factor_id=enrollment?.factor_id||selectedFactor;const data=await api({action:'mfa-verify',factor_id,code});setCode('');setEnrollment(null);onVerified(data.identity as Identity);}
+    catch(error){setMessage(error instanceof Error?error.message:'Código rechazado.');}finally{setBusy(false);}}
+  return <section><h2>{identity.aal==='aal2'?'Autenticadores MFA':identity.mfaRequired?'Verificación MFA necesaria':'Protege tu cuenta con MFA'}</h2>
+    <p>Usa una aplicación TOTP compatible con Google Authenticator. Una sesión que ya alcanzó AAL2 se conserva durante la navegación; una sesión nueva requiere su propio desafío.</p>
+    {!enrollment&&factors.length<2&&(factors.length===0||identity.aal==='aal2')&&<button disabled={busy} onClick={()=>void enroll()}>{factors.length?'Agregar autenticador de respaldo':'Configurar autenticador'}</button>}
+    {enrollment&&<><p>Escanea este QR con tu aplicación. El secreto se muestra solo durante esta inscripción y no se guarda en HUT.</p>
+      <img src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(enrollment.qr_code)}`} alt="Código QR para configurar el autenticador TOTP" width={220} height={220}/>
+      <details><summary>Introducir clave manualmente</summary><code>{enrollment.secret}</code></details></>}
+    {(enrollment||identity.aal!=='aal2'&&factors.length>0)&&<form onSubmit={verify} className="fields">{!enrollment&&factors.length>1&&<label>Autenticador<select value={selectedFactor} onChange={event=>setSelectedFactor(event.target.value)}>{factors.map(factor=><option key={factor.id} value={factor.id}>{factor.friendly_name||factor.id}</option>)}</select></label>}<label>Código de seis dígitos<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required value={code} onChange={event=>setCode(event.target.value)}/></label><button disabled={busy}>Verificar código</button></form>}
+    {message&&<p role="alert" className="error">{message}</p>}
+  </section>;
+}
 function UserCreation({onSaved}:{onSaved:()=>Promise<void>}) {
   const [message,setMessage]=useState('');const [busy,setBusy]=useState(false);
   async function submit(e:FormEvent<HTMLFormElement>){e.preventDefault();const form=e.currentTarget;const fields=new FormData(form);setBusy(true);setMessage('');try{const result=await api({action:'create-user',email:fields.get('email'),password:fields.get('password'),role:fields.get('role')});form.reset();await onSaved();setMessage(`Usuario interno creado: ${JSON.stringify(result.user)}`);}catch(error){setMessage(error instanceof Error?error.message:'Error.');}finally{setBusy(false);}}
@@ -157,18 +178,20 @@ export default function QaPanel({initialIdentity}:{initialIdentity:Identity|null
   const [diagnostics,setDiagnostics]=useState<Api|null>(null);const [documented,setDocumented]=useState(false);const [auditOffset,setAuditOffset]=useState(0);
   const refresh=useCallback(async()=>{const response=await api(undefined,'?action=overview');setRows(response.rows||{});setIdentity(response.identity||null);},[]);
   useEffect(()=>{void api(undefined,'?action=session').then(data=>setIdentity(data.identity||null)).catch(error=>setMessage(error.message));},[]);
-  useEffect(()=>{if(identity?.role)void refresh().catch(error=>setMessage(error.message));},[identity?.role,refresh]);
+  useEffect(()=>{if(identity?.role&&(!identity.mfaRequired||identity.aal==='aal2'))void refresh().catch(error=>setMessage(error.message));},[identity?.role,identity?.mfaRequired,identity?.aal,refresh]);
   async function action(body:Record<string,unknown>){setBusy(true);setMessage('');try{const result=await api(body);setOutput(result.result||result.row||result);await refresh();}catch(error){setMessage(error instanceof Error?error.message:'Error.');}finally{setBusy(false);}}
   async function login(e:FormEvent<HTMLFormElement>){e.preventDefault();const fields=new FormData(e.currentTarget);setBusy(true);setMessage('');try{const response=await api({action:'login',email:fields.get('email'),password:fields.get('password')});setIdentity(response.identity||null);}catch(error){setMessage(error instanceof Error?error.message:'Error.');}finally{setBusy(false);}}
   const admin=identity?.role==='admin';
   const visibleRows=(rows[entity]||[]).filter(row=>!company||!['company_offerings','company_branches','company_contacts','company_sources','company_editorial','company_reports'].includes(entity)||row.company_id===company);
   async function audit(offset:number){setBusy(true);try{const response=await api(undefined,`?action=records&entity=audit_log&offset=${offset}`);setRows(current=>({...current,audit_log:response.rows as unknown as Row[]}));setAuditOffset(offset);}catch(e){setMessage(e instanceof Error?e.message:'Error.');}finally{setBusy(false);}}
   function navigate(name:string){setGroup(name);setEntity(groups[name][0]||'companies');setEdit(null);setOutput(null);setMessage('');}
-  return <main className="qa"><header><h1>HUT · QA interno</h1><p>Desarrollo · lewlduoqmsdnmxfichus · perfiles no reclamados · sin despliegue público</p>{identity&&<div className="actions"><span>{identity.user.email||identity.user.id} · {identity.role||'sin rol HUT activo'}</span><button onClick={()=>void api({action:'logout'}).then(()=>{setIdentity(null);setRows({});setOutput(null);})}>Cerrar sesión</button></div>}{identity?.role&&<OwnPasswordChange/>}</header>
+  return <main className="qa"><header><h1>HUT · QA interno</h1><p>Desarrollo · lewlduoqmsdnmxfichus · perfiles no reclamados · sin despliegue público</p>{identity&&<div className="actions"><span>{identity.user.email||identity.user.id} · {identity.role||'sin rol HUT activo'}</span><button onClick={()=>void api({action:'logout'}).then(()=>{setIdentity(null);setRows({});setOutput(null);})}>Cerrar sesión</button></div>}{identity?.role&&(!identity.mfaRequired||identity.aal==='aal2')&&<OwnPasswordChange/>}</header>
     {message&&<p role="alert" className="error">{message}</p>}
     {!identity?<section><h2>Iniciar sesión</h2><form onSubmit={login} className="login"><label>Email<input name="email" type="email" autoComplete="username" required/></label><label>Contraseña<input name="password" type="password" autoComplete="current-password" required/></label><button disabled={busy}>Entrar</button></form><p>El primer administrador se prepara con <code>npm run qa:bootstrap -- --email correo-real</code>. Revisa docs/QA-PANEL.md. No existe autorregistro.</p></section>:
     !identity.role?<section><h2>Acceso administrativo denegado</h2><p>Auth identificó tu cuenta, pero no hay rol HUT activo. Un administrador debe habilitar tu UUID: <code>{identity.user.id}</code>. Los metadatos del usuario no conceden permisos.</p></section>:
+    identity.mfaRequired&&identity.aal!=='aal2'?<StaffMfa identity={identity} onVerified={setIdentity}/>:
     <><nav aria-label="Secciones QA">{Object.keys(groups).map(name=><button key={name} aria-current={group===name?'page':undefined} onClick={()=>navigate(name)}>{name}</button>)}</nav>
+      <StaffMfa identity={identity} onVerified={setIdentity}/>
       {group==='Simulador de directorio'?<SearchSimulator rows={rows}/>:
        group==='Diagnóstico y pruebas'?<section><h2>Diagnóstico y pruebas</h2><button disabled={busy} onClick={()=>{setBusy(true);void api({action:'diagnostics'}).then(setDiagnostics).catch(e=>setMessage(e.message)).finally(()=>setBusy(false));}}>Ejecutar comprobaciones en vivo</button><p>Los controles que no se ejecutan se muestran NOT TESTED. Las pruebas con fixtures se ejecutan aparte y se revierten.</p>{diagnostics&&<><h3>Sesión y consultas actuales</h3><DataTable entity="diagnostics" rows={Array.isArray(diagnostics.live)?diagnostics.live as Row[]:[]}/><h3>Evidencia de operador (fecha indicada, no consulta actual)</h3><pre>{JSON.stringify(diagnostics.operator,null,2)}</pre></>}<p>Configurar manualmente en Supabase: private fuera de Data API, registro público y Auth anónimo deshabilitados, URL/redirect locales y política de contraseñas. El panel no cambia esos ajustes.</p></section>:
        <section><h2>{group}</h2>{group==='Usuarios y permisos'&&<><p>Solo un admin modifica roles. No puedes asignarte ni modificar tu propio rol. Suspender personal toma efecto en la próxima petición.</p>{admin?<UserCreation onSaved={refresh}/>:<p>Editor: la administración de usuarios y roles está denegada en servidor y base de datos.</p>}</>}

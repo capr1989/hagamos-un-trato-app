@@ -73,6 +73,8 @@ Para un perfil real preparado con evidencia permitida: publicar componentes resp
 
 El navegador recibe cookies HttpOnly/SameSite Strict; la sesión se verifica con Auth `getUser` y el rol se consulta en cada operación. Las mutaciones exigen origen local exacto. Hay límites de cuerpo e intentos; no hay SQL arbitrario ni DELETE. Los datos privados se acceden mediante funciones públicas `SECURITY INVOKER` que siguen las RLS existentes, sin exponer el esquema privado. El helper privado de requisitos usa `SECURITY DEFINER` deliberadamente, verifica personal activo y no modifica datos.
 
+El flujo TOTP y la migración de política MFA están preparados localmente. Las cuentas presentes al aplicar la migración mantienen AAL1 durante la inscripción; las nuevas requieren AAL2. El panel permite QR, verificación, desafío de sesiones nuevas y un segundo autenticador. El procedimiento de activación y recuperación está en [MFA-STAFF.md](MFA-STAFF.md). **No se aplicó esta migración a Supabase Dev ni se probó una inscripción alojada.**
+
 ```powershell
 npm run validate
 npm run build
@@ -81,7 +83,7 @@ npm run qa:smoke-http
 npm run qa:smoke-public
 ```
 
-La suite reconstruye las once migraciones en PGlite y revierte fixtures; la CI también utiliza Supabase local/PostgreSQL 17. Los datos ficticios de las pruebas positivas no se publican en la base alojada. Los diagnósticos de infraestructura corresponden al archivo fechado `supabase/qa-verification.json` y pueden volver a comprobarse mediante MCP directo. Las pruebas de sesión real con email/contraseña requieren que el operador complete bootstrap.
+La suite reconstruye las doce migraciones en PGlite y revierte fixtures; la CI también utiliza Supabase local/PostgreSQL 17. Los datos ficticios de las pruebas positivas no se publican en la base alojada. Los diagnósticos de infraestructura corresponden al archivo fechado `supabase/qa-verification.json` y pueden volver a comprobarse mediante MCP directo. Las pruebas de sesión real con email/contraseña y MFA requieren identidades internas autorizadas.
 
 ## Ajustes manuales y límites
 
@@ -92,7 +94,7 @@ Comprobar en el proyecto alojado (no afirmar verificados por este código):
 - SMTP se necesita si posteriormente se usan invitaciones/recuperación; este panel implementa creación administrativa, no un flujo de invitaciones.
 - Delimitación documental de Ciudad de Panamá antes de crear/activar su mercado. Retención, revisión y responsabilidades editoriales antes del lanzamiento.
 
-No incluye fusión con traslado automático de hechos, administración comercial definitiva, analítica ni despliegue. La ampliación del 19/11 añade recepción pública de reportes en código, con migración alojada pendiente y configuración obligatoria, y depuración de mensaje/correo de casos cerrados con fecha aprobada; las decisiones no conceden propiedad o membresías. La auditoría conserva operación/actor/entidad y las transiciones controladas de estado editorial, sin copiar motivos libres, mensajes o contactos completos.
+No incluye fusión con traslado automático de hechos, administración comercial definitiva, analítica ni despliegue. La ampliación del 19/11 añade recepción pública de reportes en código; su migración se aplicó en Dev con versión remota `20261120200552`, mientras la activación HTTP y Turnstile siguen pendientes. La depuración de mensaje/correo de casos cerrados requiere una fecha aprobada; las decisiones no conceden propiedad o membresías. La auditoría conserva operación/actor/entidad y las transiciones controladas de estado editorial, sin copiar motivos libres, mensajes o contactos completos.
 
 ## Ampliación puntual de reportes (19/11)
 
@@ -100,4 +102,4 @@ En **Revisión editorial → Correcciones y solicitudes de retirada** se mantien
 
 Editor/admin revisan bajo RLS; decisiones sensibles sobre la empresa siguen requiriendo autorización existente y una operación separada. No hay sanciones por número de reportes. Admin dispone de **Depurar datos personales vencidos** con confirmación explícita: elimina texto/email/hashes de hasta 100 casos cerrados y con fecha aprobada ya vencida; mantiene la fila y auditoría mínima. Los campos purgados quedan bloqueados. No asigna 90 días por defecto ni configura una tarea programada.
 
-Antes de usar estas acciones contra el proyecto alojado debe aplicarse/verificarse la migración nueva por MCP directo. Hasta entonces las llamadas nuevas pueden fallar; el resto de pestañas no requiere esa migración. Consultar [REPORTS.md](REPORTS.md) para configuración, pruebas manuales y límites pendientes. El panel conserva su restricción a desarrollo loopback.
+Antes de usar estas acciones contra el proyecto alojado se debe consultar la evidencia de verificación de la migración de reportes. Consultar [REPORTS.md](REPORTS.md) para configuración, pruebas manuales y límites pendientes. El panel conserva su restricción a desarrollo loopback.

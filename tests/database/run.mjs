@@ -31,10 +31,10 @@ const uid = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 const q = async (sql, params = []) => (await db.query(sql, params)).rows;
 const count = async (sql, params = []) => Number((await q(sql, params))[0].n);
 const scalar = async (sql, params = []) => Object.values((await q(sql, params))[0])[0];
-const role = async (name, user = '') => {
+const role = async (name, user = '', aal = 'aal2') => {
   if (!['anon', 'authenticated', 'postgres','service_role'].includes(name)) throw new Error('Unknown fixture role');
   await db.exec('reset role');
-  await q("select set_config('request.jwt.claim.sub',$1,true), set_config('request.jwt.claims',$2,true)", [user, JSON.stringify({ sub: user || undefined, role: name })]);
+  await q("select set_config('request.jwt.claim.sub',$1,true), set_config('request.jwt.claims',$2,true)", [user, JSON.stringify({ sub: user || undefined, role: name, aal: name === 'authenticated' ? aal : undefined })]);
   await db.exec(`set local role ${name}`);
 };
 const rejected = async (sql, params = [], codes = ['23503', '23505', '23514', '42501']) => {
@@ -230,6 +230,35 @@ try {
     await q("select set_config('request.jwt.claims',$1,true)", [JSON.stringify({ sub: outsider, role: 'authenticated', user_metadata: { role: 'admin' } })]);
     assert.equal(await scalar('select private.has_staff_role()'), false);
     await rejected("insert into private.staff_roles(user_id,role) values($1,'admin')", [outsider], ['42501']);
+  });
+  test('New staff require AAL2 for direct RLS and administrative RPCs', async () => {
+    assert.equal(await scalar('select mfa_required from private.staff_roles where user_id=$1', [editor]), true);
+    await role('authenticated', editor, 'aal1');
+    assert.equal(await scalar('select private.has_staff_role()'), false);
+    assert.equal((await scalar('select public.qa_staff_context()')).role, 'editor');
+    assert.equal((await scalar('select public.qa_staff_context()')).mfa_required, true);
+    assert.equal(await count('select count(*) as n from private.company_reports'), 0);
+    assert.equal((await q("update public.companies set publication_status='hidden' where id=$1 returning id", [a.companyId])).length, 0);
+    await rejected("select public.qa_records('companies')", [], ['42501']);
+    await rejected("select public.qa_save('companies',$1::jsonb)", [JSON.stringify({trade_name:'TEST ONLY denied'})], ['42501']);
+    await rejected("select public.qa_company_reports(null,null,null,false,1,0)", [], ['42501']);
+    await role('authenticated', admin, 'aal1');
+    await rejected("select public.qa_purge_due_company_reports(1)", [], ['42501']);
+    await rejected("select public.qa_save('staff_roles',$1::jsonb)", [JSON.stringify({user_id:outsider,role:'editor',mfa_required:false})], ['42501']);
+    await role('authenticated', editor, 'aal2');
+    assert.equal(await scalar('select private.has_staff_role()'), true);
+    assert.ok((await scalar("select public.qa_records('company_sources')")).length > 0);
+  });
+  test('Existing staff keep AAL1 during staged enrollment', async () => {
+    await q('update private.staff_roles set mfa_required=false where user_id=$1', [editor]);
+    await role('authenticated', editor, 'aal1');
+    assert.equal(await scalar('select private.has_staff_role()'), true);
+    assert.ok((await scalar("select public.qa_records('company_sources')")).length > 0);
+    assert.equal((await scalar('select public.qa_staff_context()')).mfa_required, false);
+  });
+  test('QA role bridge cannot disable a future staff MFA requirement', async () => {
+    await role('authenticated', admin, 'aal2');
+    await rejected("select public.qa_save('staff_roles',$1::jsonb,$2)", [JSON.stringify({mfa_required:false}), editor], ['22023']);
   });
   test('Editor can see drafts but cannot elevate their staff role', async () => {
     await role('authenticated', editor);
