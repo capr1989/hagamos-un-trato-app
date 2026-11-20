@@ -721,12 +721,31 @@ export type Database = {
       }
     }
     Functions: {
+      maintain_company_report_ingress: {
+        Args: { p_limit?: number }
+        Returns: Json
+      }
       qa_archive_test_company: { Args: { p_company_id: string }; Returns: Json }
       qa_bootstrap_admin: { Args: { p_user_id: string }; Returns: Json }
       qa_bootstrap_status: { Args: never; Returns: boolean }
+      qa_company_reports: {
+        Args: {
+          p_company_id?: string
+          p_limit?: number
+          p_offset?: number
+          p_repeated_only?: boolean
+          p_status?: string
+          p_type?: string
+        }
+        Returns: Json
+      }
       qa_duplicate_candidates: { Args: { p_company_id: string }; Returns: Json }
       qa_publication_check: { Args: { p_company_id: string }; Returns: Json }
       qa_publish_company: { Args: { p_company_id: string }; Returns: Json }
+      qa_purge_due_company_reports: {
+        Args: { p_limit?: number }
+        Returns: Json
+      }
       qa_records: {
         Args: {
           p_company_id?: string
@@ -767,6 +786,19 @@ export type Database = {
           has_documented_presence: boolean
           trade_name: string
         }[]
+      }
+      submit_company_report: {
+        Args: {
+          p_challenge_hash: string
+          p_company_id: string
+          p_fingerprint: string
+          p_message: string
+          p_origin_hash: string
+          p_privacy_notice_version: string
+          p_reply_email: string
+          p_report_type: string
+        }
+        Returns: boolean
       }
     }
     Enums: {

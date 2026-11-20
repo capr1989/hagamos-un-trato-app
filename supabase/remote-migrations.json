@@ -1,9 +1,9 @@
 {
   "project_id": "lewlduoqmsdnmxfichus",
-  "verified_date": "2026-11-17",
+  "verified_date": "2026-11-20",
   "source_commit": "b266c1c487421ad9d2f9b84c2667fd01fd4c6b6b",
-  "mechanism": "direct MCP supabase.apply_migration",
-  "note": "MCP generated remote versions. Local files are unchanged. Reconcile version mapping before any future CLI migration operation; do not reapply by local timestamps.",
+  "mechanism": "direct MCP for the first ten migrations; Codex Supabase connector apply_migration for company_report_ingress",
+  "note": "Remote versions were assigned by Supabase and may differ from local filename prefixes. The first ten migrations were rechecked unchanged on 2026-11-20. Do not reapply by local timestamps.",
   "migrations": [
     {
       "file": "supabase/migrations/20261117171305_foundation.sql",
@@ -146,6 +146,18 @@
         "success": true
       },
       "remote_content_matched": true
+    },
+    {
+      "file": "supabase/migrations/20261119210627_company_report_ingress.sql",
+      "local_version": "20261119210627",
+      "name": "company_report_ingress",
+      "sha256": "da4520697de7d8b927e5e7ca689003a62ab313e6e1f87298ade5c5d4a8d543e0",
+      "remote_version": "20261120200552",
+      "response": {
+        "success": true
+      },
+      "source_commit": "b9ca28b27b2cc23d5a22c6dd8fb165ad2da4807e",
+      "local_content_matched_source_commit": true
     }
   ]
 }
