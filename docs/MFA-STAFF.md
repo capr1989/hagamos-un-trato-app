@@ -2,7 +2,7 @@
 
 ## Estado y alcance
 
-La migración local `20261120204226_staff_mfa_policy.sql` y el flujo TOTP del panel QA están preparados, pero **no se han aplicado ni probado en Supabase Dev**. No cambiar la configuración alojada ni activar la exigencia para el personal existente sin una autorización de despliegue y las pruebas indicadas abajo. El panel sigue limitado a loopback y no se publica.
+La migración local `20261120204226_staff_mfa_policy.sql` fue aplicada a Supabase Dev el 20/11/2026 con versión remota **`20261120212506`**. La estructura y los permisos se verificaron mediante el conector Supabase. **El flujo TOTP con una cuenta real y la recuperación no se han probado todavía.** No activar la exigencia para el personal existente antes de esas pruebas. El panel sigue limitado a loopback y no se publica. Véase [mfa-verification.json](../supabase/mfa-verification.json).
 
 Esta política corresponde solo a filas activas de `private.staff_roles` (`admin` y `editor`). No crea cuentas de visitantes, empresas ni clientes. La columna `mfa_required` vale `false` para las filas presentes al aplicar la migración y `true` por defecto para las filas nuevas. Así se conserva el acceso del personal actual mientras se inscribe. La activación posterior de cada cuenta existente requiere una operación separada y autorizada, tras comprobar su inscripción y la recuperación.
 
@@ -25,7 +25,7 @@ La operación privilegiada de recuperación **no está automatizada ni probada c
 
 ## Activación controlada pendiente
 
-1. Autorizar, aplicar y verificar la nueva migración en Dev. Confirmar que las filas existentes conservan `mfa_required=false`, que las nuevas reciben `true`, que `private` sigue fuera de Data API y que las políticas y grants previos permanecen.
+1. **Completado:** aplicar y verificar la migración en Dev. Las dos filas existentes conservaron `mfa_required=false`, el valor predeterminado nuevo es `true`, las 64 políticas y 19 tablas con RLS permanecen. La configuración alojada de exposición de esquemas de Data API no se verificó en esta revisión.
 2. Probar con cuentas internas reales o de prueba autorizadas: QR, código incorrecto, AAL2, sesión nueva AAL1, respaldo, salida/entrada, expiración/refresco, editor/admin, usuario sin rol y cuenta suspendida. Probar llamadas directas a RPC y RLS con JWT AAL1 y AAL2. Registrar resultados sin códigos ni tokens.
 3. Probar el procedimiento de pérdida del autenticador en Dev y confirmar que el usuario recupera AAL2. Preparar un operador de respaldo antes de exigir MFA al único administrador.
 4. Cada administrador/editor actual configura y verifica su factor. Tras comprobar la recuperación y obtener autorización específica, actualizar `mfa_required=true` por cuenta; no hacerlo en lote a ciegas. Verificar una sesión nueva para cada usuario.
