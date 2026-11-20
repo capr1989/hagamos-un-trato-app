@@ -35,7 +35,7 @@
     "next_http_disabled_smoke": "PASS 503; local child server; no hosted calls"
   },
   "postgres17": {
-    "local": "NOT RUN: Docker engine unavailable",
+    "local": "NOT RUN in this synchronization; Docker availability not checked",
     "ci": "NOT VERIFIED for this branch"
   },
   "hosted": {
