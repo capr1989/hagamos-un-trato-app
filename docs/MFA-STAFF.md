@@ -2,7 +2,7 @@
 
 ## Estado y alcance
 
-La migración local `20261120204226_staff_mfa_policy.sql` fue aplicada a Supabase Dev el 20/11/2026 con versión remota **`20261120212506`**. La estructura y los permisos se verificaron mediante el conector Supabase. **El flujo TOTP con una cuenta real y la recuperación no se han probado todavía.** No activar la exigencia para el personal existente antes de esas pruebas. El panel sigue limitado a loopback y no se publica. Véase [mfa-verification.json](../supabase/mfa-verification.json).
+La migración local `20261120204226_staff_mfa_policy.sql` fue aplicada a Supabase Dev el 20/11/2026 con versión remota **`20261120212506`**. La estructura y los permisos se verificaron mediante el conector Supabase. El 24/11/2026 se probaron inscripción TOTP, AAL2 y recuperación de **contraseña** con desafío TOTP en una cuenta administrativa real; véase [mfa-recovery-verification.json](../supabase/mfa-recovery-verification.json). **La recuperación por pérdida del autenticador sigue sin probarse.** No activar la exigencia para el personal existente antes de esa prueba. El panel sigue limitado a loopback y no se publica.
 
 Esta política corresponde solo a filas activas de `private.staff_roles` (`admin` y `editor`). No crea cuentas de visitantes, empresas ni clientes. La columna `mfa_required` vale `false` para las filas presentes al aplicar la migración y `true` por defecto para las filas nuevas. Así se conserva el acceso del personal actual mientras se inscribe. La activación posterior de cada cuenta existente requiere una operación separada y autorizada, tras comprobar su inscripción y la recuperación.
 
@@ -21,7 +21,7 @@ El servidor deniega las acciones protegidas cuando `mfa_required=true` y la sesi
 
 **Sin ningún factor disponible:** el personal no recibe acceso administrativo en AAL1. Un operador con acceso privilegiado y otro responsable verifican la identidad por un canal previamente acordado, registran la solicitud y los IDs de cuenta/factor sin copiar secretos, y autorizan explícitamente retirar el factor perdido mediante `auth.admin.mfa.deleteFactor({userId,id})`. Esta API cierra las sesiones activas si el factor estaba verificado. El operador no cambia `mfa_required`, no crea un factor y no conoce el nuevo secreto. La persona vuelve a iniciar sesión y se inscribe por sí misma; solo tras alcanzar AAL2 recupera sus permisos. Si no se puede validar la identidad, suspender el rol y escalar; no omitir MFA.
 
-La operación privilegiada de recuperación **no está automatizada ni probada contra el proyecto alojado**. Antes de activar obligatoriedad para las cuentas actuales, el equipo debe ensayarla con una cuenta de prueba interna autorizada y documentar doble aprobación, acceso a la clave privilegiada, auditoría y revocación de sesiones. Supabase Auth MFA para usuarios de aplicación no ofrece códigos de recuperación; el MFA de la cuenta del Dashboard de Supabase es otro producto.
+La operación privilegiada de recuperación **no está automatizada ni probada contra el proyecto alojado**. Antes de activar obligatoriedad para las cuentas actuales, el equipo debe ensayarla con una cuenta interna controlada y documentar doble aprobación, acceso a la clave privilegiada, auditoría y revocación de sesiones. El plan detallado está en [MFA-LOSS-DRILL.md](MFA-LOSS-DRILL.md). El MFA de la cuenta del Dashboard de Supabase es otro producto.
 
 ## Activación controlada pendiente
 
