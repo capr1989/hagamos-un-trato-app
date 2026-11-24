@@ -46,6 +46,8 @@ Entrar al panel con ese email y contraseña. Después puede retirarse `SUPABASE_
 
 El primer administrador también puede provisionarse mediante una operación de operador explícitamente autorizada por MCP. Una vez creado, no hay que repetir bootstrap. En la cabecera del panel, **Cambiar mi contraseña** permite sustituir la temporal usando la contraseña actual y reautenticación de la propia cuenta, sin clave privilegiada.
 
+Si se olvidó la contraseña, el enlace **Olvidé mi contraseña** abre `/internal/qa/recover`. Para usarlo en Dev, Auth debe permitir exactamente `http://127.0.0.1:3000/internal/qa/recover` como Redirect URL. Cada persona solicita el correo desde esa página, abre el enlace en el mismo navegador y equipo, elige una contraseña nueva y luego inicia sesión con su factor TOTP. El flujo no modifica roles ni factores. No enviar enlaces hasta comprobar la URL permitida; el correo alojado y el retorno real aún requieren prueba. No compartir el enlace, tokens o nueva contraseña en chat ni logs.
+
 ## Secciones conectadas
 
 - **Usuarios y permisos:** login/logout, cuenta y rol actual, creación Auth interna por admin, habilitación por UUID, `admin`/`editor`, suspensión/reactivación. El usuario Auth sin rol queda denegado; el editor no administra roles.
