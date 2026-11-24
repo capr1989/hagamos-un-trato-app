@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
-import { checkRequest, publicClient, requireStaff, sessionContext, setSessionCookies, closeAuthSession, operatorClient, jsonBody, rateLimit } from '@/lib/qa/server';
+import { checkRequest, publicClient, requireStaff, sessionContext, setSessionCookies, closeAuthSession, operatorClient, jsonBody, rateLimit, mfaClient } from '@/lib/qa/server';
 import { QaError, searchArguments, uuid, boundedInt, ownPasswordInput } from '@/lib/qa/policy';
 import { entities } from '@/lib/qa/schema';
 import { REPORT_TYPES, REPORT_STATUSES } from '@/lib/company-reports/contract';
@@ -23,6 +23,12 @@ export async function GET(request: Request) {
     checkRequest(request);
     const params = new URL(request.url).searchParams;
     if (params.get('action') === 'session') return respond({ identity: (await sessionContext())?.identity || null });
+    if (params.get('action') === 'mfa') {
+      const { auth } = await mfaClient();
+      const factors = await auth.auth.mfa.listFactors();
+      if (factors.error) throw new QaError('No se pudieron consultar los factores MFA.',503);
+      return respond({ factors: factors.data.totp.filter(factor => factor.status === 'verified').map(factor => ({ id: factor.id, friendly_name: factor.friendly_name })) });
+    }
     const session = await requireStaff();
     if (params.get('action') === 'overview') {
       const entries = await Promise.all(Object.keys(entities).filter(name => !['audit_log','company_reports'].includes(name) && (name !== 'staff_roles' || session.identity.role === 'admin')).map(async name => [name, result(await session.client.rpc('qa_records', { p_entity: name, p_limit: 200 }))]));
@@ -57,6 +63,30 @@ export async function POST(request: Request) {
     if (body.action === 'logout') {
       const revoked = await closeAuthSession();
       return respond({ identity: null, auth_session_revoked:revoked });
+    }
+    if (body.action === 'mfa-enroll') {
+      const { auth, identity } = await mfaClient();
+      rateLimit(`mfa-enroll:${identity.user.id}`,3,300000);
+      const factors = await auth.auth.mfa.listFactors();
+      if (factors.error) throw new QaError('No se pudieron consultar los factores MFA.',503);
+      if (factors.data.totp.filter(factor => factor.status === 'verified').length >= 2) throw new QaError('Ya hay dos autenticadores verificados. Contacta al operador para sustituir uno.',409);
+      const enrolled = await auth.auth.mfa.enroll({factorType:'totp',friendlyName:`HUT ${randomUUID().slice(0,8)}`});
+      if (enrolled.error || !enrolled.data?.totp) throw new QaError('No se pudo iniciar la inscripción MFA.',503);
+      return respond({ factor_id:enrolled.data.id, qr_code:enrolled.data.totp.qr_code, secret:enrolled.data.totp.secret });
+    }
+    if (body.action === 'mfa-verify') {
+      const { auth, identity } = await mfaClient();
+      rateLimit(`mfa-verify:${identity.user.id}`,8,300000);
+      const factorId=uuid(body.factor_id);
+      if (typeof body.code !== 'string' || !/^\d{6}$/.test(body.code)) throw new QaError('Código MFA inválido.');
+      const verified = await auth.auth.mfa.challengeAndVerify({factorId,code:body.code});
+      if (verified.error || !verified.data?.access_token) throw new QaError('Código MFA rechazado.',403);
+      const upgraded = await auth.auth.getSession();
+      if (!upgraded.data.session || upgraded.data.session.user.id!==identity.user.id) throw new QaError('No se pudo actualizar la sesión MFA.',503);
+      const aal=await auth.auth.mfa.getAuthenticatorAssuranceLevel(upgraded.data.session.access_token);
+      if (aal.error || aal.data.currentLevel!=='aal2') throw new QaError('La sesión no alcanzó AAL2.',503);
+      await setSessionCookies(upgraded.data.session);
+      return respond({ identity: { ...identity, aal:'aal2', nextAal:'aal2' } });
     }
     const session = await requireStaff();
     rateLimit(`write:${session.identity.user.id}`,120,60000);

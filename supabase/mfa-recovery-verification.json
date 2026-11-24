@@ -1,0 +1,26 @@
+{
+  "project_id": "lewlduoqmsdnmxfichus",
+  "date": "2026-11-24",
+  "scope": "one existing administrator in Supabase Dev",
+  "redirect_url": "http://127.0.0.1:3000/internal/qa/recover",
+  "observations": {
+    "password_login_before_recovery": "FAIL: Auth invalid_credentials",
+    "recovery_email_and_local_redirect": "PASS: user observed password recovery page",
+    "password_update_at_aal1": "DENIED: Auth insufficient_aal",
+    "recovery_totp_challenge": "PASS: user completed TOTP before password update",
+    "password_update_after_aal2": "PASS: user observed success; Auth logged user_modified",
+    "new_password_login": "PASS: Auth logged login 200",
+    "new_session_initial_aal": "aal1, user observed",
+    "new_session_totp_challenge": "PASS: user observed aal2 after verification",
+    "protected_admin_page": "PASS: user observed Usuarios y permisos loading",
+    "final_staff_role": "active admin",
+    "final_mfa_required": false,
+    "final_verified_totp_factors": 1
+  },
+  "not_tested": [
+    "mandatory AAL2 policy for this existing account",
+    "lost authenticator recovery",
+    "production deployment"
+  ],
+  "secrets_or_personal_data_recorded": false
+}

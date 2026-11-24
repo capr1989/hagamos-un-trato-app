@@ -1,0 +1,54 @@
+{
+  "project_id": "lewlduoqmsdnmxfichus",
+  "project_name": "hagamos-un-trato-dev",
+  "date": "2026-11-20",
+  "source_commit": "76a145b",
+  "migration": {
+    "file": "supabase/migrations/20261120204226_staff_mfa_policy.sql",
+    "local_version": "20261120204226",
+    "name": "staff_mfa_policy",
+    "sha256": "3d98198d3166a11053992b654a636e5c1a29bed82a2339e669e580f1db885fcf",
+    "remote_version": "20261120212506",
+    "apply_migration_result": "success"
+  },
+  "before": {
+    "migration_count": 11,
+    "prior_latest": { "version": "20261120200552", "name": "company_report_ingress" },
+    "staff_total": 2,
+    "active_staff": 2,
+    "mfa_column_present": false,
+    "rls_tables": 19,
+    "policies": 64,
+    "policies_hash": "1510daaeacfe7fb4fe42c15f1a6e4dd5"
+  },
+  "after": {
+    "migration_count": 12,
+    "prior_migrations_preserved": true,
+    "staff_total": 2,
+    "active_staff": 2,
+    "staff_mfa_required_true": 0,
+    "staff_mfa_required_false": 2,
+    "mfa_required_not_null": true,
+    "mfa_required_default": "true",
+    "rls_tables": 19,
+    "policies": 64,
+    "policies_hash": "1510daaeacfe7fb4fe42c15f1a6e4dd5",
+    "anonymous_execute_staff_mfa_context": false,
+    "authenticated_execute_staff_mfa_context": true,
+    "anonymous_execute_qa_staff_context": false,
+    "authenticated_execute_qa_staff_context": true,
+    "staff_table_acl_unchanged": true,
+    "has_staff_role_definition_checks_aal2_when_required": true
+  },
+  "hosted_totp_enrollment": "NOT TESTED",
+  "hosted_aal1_aal2_with_real_staff_token": "NOT TESTED: no staff MFA policy was changed or factor enrolled",
+  "hosted_recovery": "NOT TESTED",
+  "hosted_data_api_schema_configuration": "NOT VERIFIED",
+  "advisors": {
+    "security_before_after_unchanged": ["rls_enabled_no_policy:1 INFO", "auth_leaked_password_protection:1 WARN"],
+    "performance_before_after_unchanged": ["unindexed_foreign_keys:9 INFO", "unused_index:31 INFO", "multiple_permissive_policies:12 WARN"],
+    "health_before_after": "no notices"
+  },
+  "existing_staff_mfa_requirement_activated": false,
+  "public_panel_deployed": false
+}

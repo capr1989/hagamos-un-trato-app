@@ -20,6 +20,8 @@ Los predicados de lectura relacional necesitan inspeccionar datos sin volver a e
 
 La autorización de personal sí exige `auth.uid()` y consulta el registro real de roles, sin confiar en `user_metadata`. No hay funciones `SECURITY DEFINER` en `public`. La búsqueda es `SECURITY INVOKER`; la vista usa `security_invoker=true`. Las funciones de trigger solo se ejecutan por las operaciones que ya pasan permisos y RLS.
 
+La migración MFA local pendiente añade `mfa_required` al registro de personal. Al aplicarse, conserva `false` para los integrantes previos y usa `true` para los nuevos. `private.has_staff_role` exigirá además el claim Auth `aal2` cuando corresponda, de modo que las llamadas directas a tablas y RPC no eviten la verificación del servidor. La transición, recuperación y pruebas alojadas pendientes se detallan en [MFA-STAFF.md](MFA-STAFF.md). Hasta aplicar y verificar la migración, la protección de base de datos alojada sigue siendo la anterior.
+
 ## Publicación y vigencia
 
 Se comprueban evidencia aprobada y uso permitido, atribuciones requeridas, categoría/servicio, mercado activo, presencia o cobertura y mínimo útil. La vigencia se evalúa al leer; no depende de que una tarea haya modificado un booleano. Los estados `not_served`/`disputed` tienen precedencia territorial específica y nunca se convierten automáticamente en cobertura confirmada.

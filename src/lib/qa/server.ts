@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import type { Session } from '@supabase/supabase-js';
 import { QaError, qaConfig, assertLocalRequest } from './policy';
 
-export type Identity = { user: { id: string; email: string | null }; role: 'admin' | 'editor' | null };
+export type Identity = { user: { id: string; email: string | null }; role: 'admin' | 'editor' | null; mfaRequired: boolean; aal: 'aal1' | 'aal2'; nextAal: 'aal1' | 'aal2' };
 const accessName = 'hut-qa-access';
 const refreshName = 'hut-qa-refresh';
 const options = { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false };
@@ -64,13 +64,30 @@ export async function sessionContext(refresh = true) {
   const context = await client.rpc('qa_staff_context');
   if (context.error) throw new QaError('No se pudo comprobar el rol HUT. Verifica la migración QA y la Data API.', 503);
   const role = ['admin','editor'].includes(context.data?.role) ? context.data.role as 'admin' | 'editor' : null;
-  return { client, identity: { user: { id: user.id, email: user.email || null }, role } satisfies Identity };
+  const assurance = await auth.auth.mfa.getAuthenticatorAssuranceLevel(token);
+  const aal = assurance.data?.currentLevel === 'aal2' ? 'aal2' : 'aal1';
+  const nextAal = assurance.data?.nextLevel === 'aal2' ? 'aal2' : 'aal1';
+  return { client, identity: { user: { id: user.id, email: user.email || null }, role,
+    mfaRequired: context.data?.mfa_required === true, aal, nextAal } satisfies Identity };
 }
 export async function requireStaff(admin = false) {
   const session = await sessionContext();
   if (!session) throw new QaError('Inicia sesión.', 401);
   if (!session.identity.role || (admin && session.identity.role !== 'admin')) throw new QaError(admin ? 'Se requiere administrador.' : 'Esta cuenta no tiene un rol HUT activo.', 403);
+  if (session.identity.mfaRequired && session.identity.aal !== 'aal2') throw new QaError('Completa la verificación MFA para continuar.', 403);
   return session;
+}
+export async function mfaClient() {
+  const session = await sessionContext();
+  if (!session?.identity.role) throw new QaError('Se requiere personal HUT activo.', 403);
+  const jar = await cookies();
+  const access = jar.get(accessName)?.value;
+  const refresh = jar.get(refreshName)?.value;
+  if (!access || !refresh) throw new QaError('Inicia sesión.', 401);
+  const auth = publicClient();
+  const established = await auth.auth.setSession({ access_token: access, refresh_token: refresh });
+  if (established.error || established.data.user?.id !== session.identity.user.id) throw new QaError('Sesión inválida.', 401);
+  return { auth, identity: session.identity };
 }
 export function operatorClient() {
   const config = qaConfig(process.env);
