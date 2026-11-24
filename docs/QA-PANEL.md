@@ -46,7 +46,9 @@ Entrar al panel con ese email y contraseña. Después puede retirarse `SUPABASE_
 
 El primer administrador también puede provisionarse mediante una operación de operador explícitamente autorizada por MCP. Una vez creado, no hay que repetir bootstrap. En la cabecera del panel, **Cambiar mi contraseña** permite sustituir la temporal usando la contraseña actual y reautenticación de la propia cuenta, sin clave privilegiada.
 
-Si se olvidó la contraseña, el enlace **Olvidé mi contraseña** abre `/internal/qa/recover`. Para usarlo en Dev, Auth debe permitir exactamente `http://127.0.0.1:3000/internal/qa/recover` como Redirect URL. Cada persona solicita el correo desde esa página, abre el enlace en el mismo navegador y equipo, elige una contraseña nueva y luego inicia sesión con su factor TOTP. El flujo no modifica roles ni factores. No enviar enlaces hasta comprobar la URL permitida; el correo alojado y el retorno real aún requieren prueba. No compartir el enlace, tokens o nueva contraseña en chat ni logs.
+Si se olvidó la contraseña, el enlace **Olvidé mi contraseña** abre `/internal/qa/recover`. Para usarlo en Dev, Auth debe permitir exactamente `http://127.0.0.1:3000/internal/qa/recover` como Redirect URL. Cada persona solicita el correo desde esa página, abre el enlace en el mismo navegador y equipo, verifica primero su TOTP para alcanzar AAL2, elige una contraseña nueva y luego inicia sesión. Supabase Auth rechazó el cambio en AAL1 con `insufficient_aal`; no omitir este desafío. El flujo no modifica roles ni factores. No compartir el enlace, tokens, código o nueva contraseña en chat ni logs.
+
+El 24/11/2026 se probó en Supabase Dev con una cuenta administrativa real, sin registrar su identidad ni credenciales: correo de recuperación, retorno local, desafío TOTP AAL2, cambio de contraseña, nuevo inicio AAL1, nuevo desafío hasta AAL2 y lectura de **Usuarios y permisos**. Auth registró el cambio y el login exitoso; `mfa_required` continuó en `false`. Esta prueba no activa la obligatoriedad para el personal existente ni demuestra aún la recuperación de un autenticador perdido.
 
 ## Secciones conectadas
 
